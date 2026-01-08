@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LifeBalance — Host Page</title>
+    <style>
+      body { font-family: Inter, Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:24px }
+      table { width:100%; border-collapse:collapse; margin-top:12px }
+      th,td { padding:12px; border:1px solid #e2e8f0; text-align:left; vertical-align:top }
+      th { background:#0ea5e9; color:white }
+      .small { font-size:12px; color:#475569 }
+      .mono { font-family: monospace; font-size:12px }
+      pre { white-space:pre-wrap; word-break:break-word }
+    </style>
+  </head>
+  <body>
+    <h1>Host Page — Registered Users</h1>
+    <p class="small">This page reads the <code>lifebalance_users</code> localStorage key and shows all registered accounts (including guests).</p>
+    <div id="content">Loading...</div>
+
+    <script>
+      // WARNING: this sets a default host password in localStorage if none exists.
+      // It's stored in plain text — acceptable for local dev but insecure for production.
+      if (!localStorage.getItem('host_password')) {
+        localStorage.setItem('host_password', 'Fsa12joh1moh2FMJZ');
+      }
+
+      function readUsers() {
+        try {
+          const raw = localStorage.getItem('lifebalance_users');
+          return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+      }
+
+      function readSuggestions() {
+        try {
+          const raw = localStorage.getItem('lifebalance_suggestions');
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) { return []; }
+      }
+
+      function msToHMS(ms){
+        if(!ms) return '0s';
+        let s = Math.floor(ms/1000);
+        const h = Math.floor(s/3600); s%=3600;
+        const m = Math.floor(s/60); s%=60;
+        return (h? h+'h ':'') + (m? m+'m ':'') + s+'s';
+      }
+
+      // auth helpers
+      function isLoggedIn(){
+        return sessionStorage.getItem('host_logged_in') === '1';
+      }
+      function setLoggedIn(name){
+        sessionStorage.setItem('host_logged_in','1');
+        sessionStorage.setItem('host_admin_name', name||'admin');
+      }
+      function logout(){
+        sessionStorage.removeItem('host_logged_in');
+        sessionStorage.removeItem('host_admin_name');
+        location.reload();
+      }
+
+      function showAuth() {
+        const area = document.getElementById('content');
+        const stored = localStorage.getItem('host_password');
+        if (!stored) {
+          area.innerHTML = `<h3>Set Host Password</h3>
+            <p class="small">No host password set. Create one to protect this page.</p>
+            <div style="margin-top:8px"><input id="hpw" placeholder="New password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
+            <div style="margin-top:8px"><button id="hpwBtn" style="padding:8px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px">Set Password</button></div>`;
+          const hpwBtnEl = document.getElementById('hpwBtn');
+          if (hpwBtnEl) hpwBtnEl.onclick = function(){
+            const hpwEl = document.getElementById('hpw');
+            const v = hpwEl ? hpwEl.value : '';
+            if(!v) return alert('Please enter a password');
+            localStorage.setItem('host_password', v);
+            alert('Password saved. Please login.');
+            render();
+          };
+        } else {
+          area.innerHTML = `<h3>Host Login</h3>
+            <div style="margin-top:8px"><label>Name</label><input id="hn" placeholder="admin name" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
+            <div style="margin-top:8px"><label>Password</label><input id="hpwLogin" placeholder="password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
+            <div style="margin-top:8px;display:flex;gap:8px"><button id="loginBtn" style="padding:8px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px">Login</button><button id="clearBtn" style="padding:8px 12px;background:#e2e8f0;border:none;border-radius:8px">Clear</button></div>`;
+          const loginBtnEl = document.getElementById('loginBtn');
+          const clearBtnEl = document.getElementById('clearBtn');
+          if (loginBtnEl) loginBtnEl.onclick = function(){
+            const hn = document.getElementById('hn');
+            const hpwLogin = document.getElementById('hpwLogin');
+            const name = hn ? hn.value : 'admin';
+            const pw = hpwLogin ? hpwLogin.value : '';
+            const storedPw = localStorage.getItem('host_password');
+            if(pw === storedPw){ setLoggedIn(name); render(); }
+            else alert('Incorrect password');
+          };
+          if (clearBtnEl) clearBtnEl.onclick = function(){ const hn = document.getElementById('hn'); const hpwLogin = document.getElementById('hpwLogin'); if (hn) hn.value=''; if (hpwLogin) hpwLogin.value=''; };
+        }
+      }
+
+      function render() {
+        if(!isLoggedIn()){ showAuth(); return; }
+        const adminName = sessionStorage.getItem('host_admin_name')||'admin';
+        const area = document.getElementById('content');
+        area.innerHTML = `<div style="margin-bottom:12px"><strong>Logged in as ${adminName}</strong> <button id="logoutBtn" style="margin-left:8px;padding:6px 10px;border-radius:6px">Logout</button></div>`;
+        const logoutBtnEl = document.getElementById('logoutBtn');
+        if (logoutBtnEl) logoutBtnEl.onclick = logout;
+
+        // render suggestions (if any)
+        const suggestions = readSuggestions();
+        if (suggestions && suggestions.length) {
+          let shtml = '<h2>Suggestions</h2><table><thead><tr><th>Time</th><th>User</th><th>Message</th></tr></thead><tbody>';
+          for (const s of suggestions) {
+            const when = s.ts ? new Date(s.ts).toLocaleString() : '—';
+            const user = s.user ? (s.user.name ? s.user.name + (s.user.email ? ' <' + s.user.email + '>' : '') : (s.user.email||'')) : 'Anonymous';
+            shtml += `<tr><td class="mono">${when}</td><td>${user}</td><td><pre>${(s.text||'')}</pre></td></tr>`;
+          }
+          shtml += '</tbody></table>';
+          area.innerHTML += shtml;
+        } else {
+          area.innerHTML += '<h2>Suggestions</h2><p class="small">No suggestions found.</p>';
+        }
+
+        const users = readUsers();
+        const keys = Object.keys(users).sort((a,b)=> (users[b].lastLogin||0)-(users[a].lastLogin||0));
+        if (!keys.length) {
+          area.innerHTML += '<p>No users found.</p>';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Email</th><th>Name</th><th>Is Guest</th><th>Created</th><th>Last Login</th><th>Time Spent</th><th>Prefs (JSON)</th></tr></thead><tbody>';
+        for (const k of keys) {
+          const u = users[k];
+          html += `<tr>`;
+          html += `<td class="mono">${(u.email||k)}</td>`;
+          html += `<td>${(u.name||'—')}</td>`;
+          html += `<td>${u.isGuest ? 'Yes' : 'No'}</td>`;
+          html += `<td>${u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>`;
+          html += `<td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>`;
+          html += `<td>${msToHMS(u.totalTimeSpent||0)}</td>`;
+          html += `<td><pre>${JSON.stringify(u.prefs||{}, null, 2)}</pre></td>`;
+          html += `</tr>`;
+        }
+        html += '</tbody></table>';
+        area.innerHTML += html;
+      }
+
+      render();
+
+      // refresh button
+      const btn = document.createElement('button');
+      btn.textContent = 'Refresh';
+      btn.onclick = render;
+      document.body.insertBefore(btn, document.getElementById('content'));
+    </script>
+  </body>
+</html>
