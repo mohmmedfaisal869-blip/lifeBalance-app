@@ -395,6 +395,20 @@ const App: React.FC = () => {
                         {t.reset}
                       </button>
                     </div>
+                    {auth.loggedIn && !auth.isGuest && (
+                      <div className="md:col-span-2 pt-6">
+                        <button 
+                          onClick={() => {
+                            if (confirm('Are you sure you want to logout?')) {
+                              handleAuth(null);
+                            }
+                          }}
+                          className="w-full flex items-center justify-center p-8 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-3xl border border-red-100 dark:border-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all font-black text-xl"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

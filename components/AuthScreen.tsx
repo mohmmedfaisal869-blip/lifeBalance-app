@@ -40,44 +40,55 @@ function defaultPrefs() {
 }
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'guest'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'guest' | 'mobile'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
 
   const showError = (msg: string) => alert(msg);
 
   const handleSignup = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name) return showError('Please enter your name');
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showError('Please enter a valid email');
-
+    const identifier = mode === 'mobile' ? phone : email;
+    if (!identifier) return showError(`Please enter your ${mode === 'mobile' ? 'phone number' : 'email'}`);
+    if (mode === 'mobile') {
+      if (!/^\+?\d{10,}$/.test(identifier)) return showError('Please enter a valid phone number');
+    } else {
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier)) return showError('Please enter a valid email');
+    }
     const users = readUsers();
-    if (users[email]) return showError('An account with this email already exists. Please login.');
-
+    if (users[identifier]) return showError('An account with this identifier already exists. Please login.');
     const user = {
       name,
-      email,
+      email: identifier,
       prefs: defaultPrefs(),
       createdAt: Date.now(),
       lastLogin: Date.now(),
       isGuest: false
     };
-    users[email] = user;
+    users[identifier] = user;
     writeUsers(users);
-    onAuth({ name, email }, false);
+    onAuth({ name, email: identifier }, false);
   };
 
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showError('Please enter a valid email');
+    const identifier = mode === 'mobile' ? phone : email;
+    if (!identifier) return showError(`Please enter your ${mode === 'mobile' ? 'phone number' : 'email'}`);
+    if (mode === 'mobile') {
+      if (!/^\+?\d{10,}$/.test(identifier)) return showError('Please enter a valid phone number');
+    } else {
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier)) return showError('Please enter a valid email');
+    }
     const users = readUsers();
-    const user = users[email];
-    if (!user) return showError('No account found for this email. Please sign up.');
+    const user = users[identifier];
+    if (!user) return showError('No account found for this identifier. Please sign up.');
     // update lastLogin
     user.lastLogin = Date.now();
-    users[email] = user;
+    users[identifier] = user;
     writeUsers(users);
-    onAuth({ name: user.name, email }, false);
+    onAuth({ name: user.name, email: identifier }, false);
   };
 
   const handleGuest = () => {
@@ -106,6 +117,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth }) => {
           <button onClick={() => setMode('login')} className={`flex-1 py-2 rounded-2xl ${mode === 'login' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Login</button>
           <button onClick={() => setMode('signup')} className={`flex-1 py-2 rounded-2xl ${mode === 'signup' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Sign Up</button>
           <button onClick={() => setMode('guest')} className={`flex-1 py-2 rounded-2xl ${mode === 'guest' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Guest</button>
+          <button onClick={() => setMode('mobile')} className={`flex-1 py-2 rounded-2xl ${mode === 'mobile' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Mobile</button>
         </div>
 
         {mode === 'guest' ? (
@@ -120,8 +132,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth }) => {
               <input value={name} onChange={e => setName(e.target.value)} className="w-full mt-2 px-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" />
             </div>
             <div>
-              <label className="text-sm font-bold text-slate-900 dark:text-white">Email</label>
-              <input value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-2 px-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+              <label className="text-sm font-bold text-slate-900 dark:text-white">{mode === 'mobile' ? 'Phone Number' : 'Email'}</label>
+              <input value={mode === 'mobile' ? phone : email} onChange={e => mode === 'mobile' ? setPhone(e.target.value) : setEmail(e.target.value)} className="w-full mt-2 px-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder={mode === 'mobile' ? 'Enter phone number' : 'Enter email'} />
             </div>
 
             <div className="flex gap-4">
