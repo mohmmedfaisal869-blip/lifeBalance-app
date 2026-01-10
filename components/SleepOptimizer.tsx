@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { UserPreferences, SleepHistoryEntry } from '../types';
 import { translations } from '../i18n';
 import { Clock, Moon, Sun, Calendar, CheckCircle2, Bell, Sparkles, TrendingUp, X, Lightbulb, Coffee } from 'lucide-react';
@@ -12,6 +12,55 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
   const t = translations[prefs.language];
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<'weekday' | 'weekend'>('weekday');
+  const [notificationsAllowed, setNotificationsAllowed] = useState(false);
+  const [reminderAlert, setReminderAlert] = useState<{ time: string; bedtime: string } | null>(null);
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationsAllowed(Notification.permission === 'granted');
+    }
+  }, []);
+
+  // Check for upcoming reminders every minute
+  useEffect(() => {
+    const checkReminders = setInterval(() => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem('sleep_reminders') || '[]');
+        const now = new Date();
+        
+        for (const reminder of reminders) {
+          const reminderTime = new Date(reminder.time);
+          const timeDiff = reminderTime.getTime() - now.getTime();
+          
+          // If within 2 minutes of reminder, show alert
+          if (timeDiff > 0 && timeDiff < 2 * 60 * 1000) {
+            setReminderAlert({ time: reminder.bedtime, bedtime: reminder.display });
+            
+            // Show browser notification
+            if (Notification.permission === 'granted') {
+              new Notification('Sleep Time! 🌙', {
+                body: `It's ${reminder.bedtime} - Time to prepare for bed`,
+                icon: 'https://cdn-icons-png.flaticon.com/512/2966/2966327.png',
+                requireInteraction: true
+              });
+            }
+            
+            // Play sound
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj==');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+            
+            // Remove from reminders
+            const updatedReminders = reminders.filter((r: any) => r.time !== reminder.time);
+            localStorage.setItem('sleep_reminders', JSON.stringify(updatedReminders));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking reminders:', error);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(checkReminders);
+  }, []);
 
   const calculateBedtimes = (wakeupTime: string) => {
     const [hours, minutes] = wakeupTime.split(':').map(Number);
@@ -50,13 +99,45 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
     setFeedback(t.morningAdvice[quality]);
   };
 
-  const handleSetReminder = (time: string) => {
-    if ('Notification' in window) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          alert(`${t.alarmSet} ${time}`);
-        }
-      });
+  const handleSetReminder = async (time: string, display: string) => {
+    try {
+      if (!('Notification' in window)) {
+        alert('Notifications are not supported in your browser.');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      setNotificationsAllowed(permission === 'granted');
+      
+      // Calculate bedtime
+      const [hours, minutes] = time.split(':').map(Number);
+      const bedtime = new Date();
+      bedtime.setHours(hours, minutes, 0, 0);
+      
+      // If bedtime is in the past today, set for tomorrow
+      const now = new Date();
+      if (bedtime <= now) {
+        bedtime.setDate(bedtime.getDate() + 1);
+      }
+      
+      // Store reminder in localStorage
+      try {
+        const reminders = JSON.parse(localStorage.getItem('sleep_reminders') || '[]');
+        reminders.push({
+          time: bedtime.toISOString(),
+          bedtime: time,
+          display: display
+        });
+        localStorage.setItem('sleep_reminders', JSON.stringify(reminders));
+      } catch (error) {
+        console.error('Error saving reminder:', error);
+      }
+      
+      const minutesUntil = Math.floor((bedtime.getTime() - now.getTime()) / 1000 / 60);
+      alert(`✅ Sleep reminder set for ${time}!\n\nYou'll get a notification in ${minutesUntil} minutes.`);
+    } catch (error) {
+      console.error('Error setting reminder:', error);
+      alert('Error setting reminder. Please try again.');
     }
   };
 
@@ -131,8 +212,8 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
         <h3 className="text-2xl font-black px-2 flex items-center gap-3 text-slate-900 dark:text-white"><Moon className="text-indigo-500" />{t.suggestedBedtimes}</h3>
         <div className="grid md:grid-cols-3 gap-6">
           {bedtimeOptions.map((bt, i) => (
-            <div key={i} className="group bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl hover:-translate-y-2 transition-all relative overflow-hidden">
-              <div className="flex justify-between items-start mb-6">
+            <div key={i} className="group bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl hover:-translate-y-2 transition-all relative">
+              <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="flex flex-col">
                   <span className="text-xs font-black text-indigo-500 uppercase tracking-widest">{bt.duration} {t.hours}</span>
                   <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold mt-1">
@@ -140,8 +221,12 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => handleSetReminder(bt.time)}
-                  className="p-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSetReminder(bt.time, bt.display);
+                  }}
+                  className="p-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm cursor-pointer active:scale-95 flex-shrink-0"
                 >
                   <Bell size={20} />
                 </button>
@@ -196,6 +281,21 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
               className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/30"
             >
               Okay, Thanks!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {reminderAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md shadow-2xl animate-bounce">
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">🌙 Time to Sleep!</h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300 mb-6">It's {reminderAlert.time} - Time to prepare for bed and get a good night's rest.</p>
+            <button 
+              onClick={() => setReminderAlert(null)}
+              className="w-full py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all"
+            >
+              Got it! Going to sleep now 😴
             </button>
           </div>
         </div>
