@@ -5,19 +5,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
         with:
-          node-version: 22 # تم التحديث لتلبية متطلبات Capacitor
-      - name: Install and Build
+          node-version: 22
+
+      - name: Set up JDK 21 # التحديث المطلوب لحل خطأ invalid source release
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install and Build Web
         run: |
           npm install
           npm run build
           npx cap sync
+
       - name: Build with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
