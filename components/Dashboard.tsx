@@ -29,9 +29,10 @@ interface DashboardProps {
   prefs: UserPreferences;
   setPrefs: React.Dispatch<React.SetStateAction<UserPreferences>>;
   setActiveTab: (tab: any) => void;
+  user?: { name: string; email?: string };
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ prefs, setPrefs, setActiveTab }) => {
+const Dashboard: React.FC<DashboardProps> = ({ prefs, setPrefs, setActiveTab, user }) => {
   const t = translations[prefs.language];
   const goalMl = prefs.waterGoal * 1000;
   const waterPercent = Math.min(100, (prefs.waterIntake / goalMl) * 100);
@@ -92,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ prefs, setPrefs, setActiveTab }) 
           <NewLogo className="hidden md:block w-16 h-16 md:w-24 md:h-24" />
           <div>
             <h2 className="text-4xl md:text-5xl font-black mb-1 tracking-tight text-slate-900 dark:text-white">
-              {greeting}, <span className="text-blue-600 dark:text-blue-500">User</span>
+              {greeting}, <span className="text-blue-600 dark:text-blue-500">{user?.name || 'User'}</span>
             </h2>
             <p className="text-slate-500 text-base md:text-lg font-bold opacity-80">
               {new Date().toLocaleDateString(prefs.language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}

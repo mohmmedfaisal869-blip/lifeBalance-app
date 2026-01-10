@@ -339,7 +339,7 @@ const App: React.FC = () => {
         <main className="flex-1 ios-scroll overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-12 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12">
           <div className="max-w-6xl mx-auto w-full">
             <div key={activeTab} className="slide-up">
-              {activeTab === 'dashboard' && <Dashboard prefs={prefs} setPrefs={setPrefs} setActiveTab={setActiveTab} />}
+              {activeTab === 'dashboard' && <Dashboard prefs={prefs} setPrefs={setPrefs} setActiveTab={setActiveTab} user={auth.user} />}
               {activeTab === 'water' && <WaterTracker prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'sleep' && <SleepOptimizer prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'tasks' && <KanbanBoard prefs={prefs} setPrefs={setPrefs} />}
