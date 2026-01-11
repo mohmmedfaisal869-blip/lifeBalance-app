@@ -273,37 +273,6 @@ const WaterTracker: React.FC<WaterTrackerProps> = ({ prefs, setPrefs }) => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-10 rounded-[3rem] shadow-xl border border-slate-700 flex flex-col justify-center h-full">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-black text-white">Hydration Goal</h3>
-              {!isEditingGoal && (
-                <button onClick={() => setIsEditingGoal(true)} className="p-3 bg-slate-700 rounded-2xl text-slate-400 hover:text-blue-400 transition-colors">
-                  <Edit2 size={20} />
-                </button>
-              )}
-            </div>
-            
-            <div className="relative">
-              {isEditingGoal ? (
-                <div className="flex items-center gap-4">
-                  <input
-                    type="number"
-                    value={tempGoal}
-                    onChange={(e) => setTempGoal(e.target.value)}
-                    className="flex-1 bg-slate-700 rounded-[2rem] px-6 py-3 font-black text-2xl text-blue-400 outline-none border-4 border-blue-500/20"
-                    autoFocus
-                  />
-                  <button onClick={handleSaveGoal} className="p-6 bg-emerald-500 text-white rounded-[2rem] shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all"><Check size={32} /></button>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <span className="text-4xl font-black leading-none text-blue-400 tabular-nums">{prefs.waterGoal}</span>
-                  <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t.liters} / DAY</span>
-                </div>
-              )}
-            </div>
-          </div>
-
           <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-10 rounded-[3rem] shadow-xl border border-indigo-700 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-2xl font-black text-white">Drink Schedule 🕐</h3>
