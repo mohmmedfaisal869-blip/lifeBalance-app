@@ -197,7 +197,7 @@ const MicroHabits: React.FC<MicroHabitsProps> = ({ prefs, setPrefs }) => {
           <div className="p-8 bg-white dark:bg-slate-800 rounded-full shadow-lg">
              <Zap size={64} className="text-blue-500 animate-pulse" />
           </div>
-          <p className="text-2xl font-black text-slate-400 max-w-sm">Ready for a quick 10-minute wellness boost? We have 11 different challenges for you!</p>
+          <p className="text-2xl font-black text-slate-400 max-w-sm">{t.descriptions.randomHabits}</p>
         </div>
       )}
     </div>

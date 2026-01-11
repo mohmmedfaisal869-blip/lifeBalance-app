@@ -4,7 +4,9 @@ import { UserPreferences } from '../types';
 import { translations } from '../i18n';
 // Added Droplets to the imported icons from lucide-react
 import { Plus, Minus, Bell, BellOff, Edit2, RotateCcw, Check, Droplets } from 'lucide-react';
-import confetti from 'https://cdn.skypack.dev/canvas-confetti';
+
+// Declare confetti with proper typing
+declare const confetti: any;
 
 interface WaterTrackerProps {
   prefs: UserPreferences;

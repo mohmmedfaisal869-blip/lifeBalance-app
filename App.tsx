@@ -7,6 +7,7 @@ import KanbanBoard from './components/KanbanBoard.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import MicroHabits from './components/MicroHabits.tsx';
 import GratitudeJar from './components/GratitudeJar.tsx';
+import Statistics from './components/Statistics.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
 import { 
   LayoutDashboard, 
@@ -18,7 +19,8 @@ import {
   Zap,
   Heart,
   Settings,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react';
 
 const STORAGE_KEY = 'lifebalance_user_data_v4';
@@ -153,7 +155,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : DEFAULT_PREFERENCES;
   });
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'water' | 'sleep' | 'tasks' | 'habits' | 'gratitude' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'water' | 'sleep' | 'tasks' | 'habits' | 'gratitude' | 'statistics' | 'settings'>('dashboard');
   
   const t = translations[prefs.language];
   const isRTL = prefs.language === 'ar';
@@ -230,6 +232,7 @@ const App: React.FC = () => {
     { id: 'tasks', label: t.tasks, icon: CheckSquare },
     { id: 'habits', label: t.microHabits, icon: Zap },
     { id: 'gratitude', label: t.gratitudeJar, icon: Heart },
+    { id: 'statistics', label: (t as any).headers?.statistics || (t as any).statistics, icon: BarChart3 },
   ];
 
   const toggleLanguage = () => {
@@ -266,9 +269,15 @@ const App: React.FC = () => {
       {!auth.loggedIn ? (
         <div className="fixed inset-0 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
           <div className="w-full h-full">
-            {/* lazy-load AuthScreen to avoid circular noise */}
+            {/* Auth Screen with quick toggles */}
             <React.Suspense fallback={<div className="p-8">Loading...</div>}>
-              <AuthScreen onAuth={handleAuth} />
+              <AuthScreen 
+                onAuth={handleAuth} 
+                language={prefs.language}
+                theme={prefs.theme}
+                onToggleLanguage={toggleLanguage}
+                onToggleTheme={toggleTheme}
+              />
             </React.Suspense>
           </div>
         </div>
@@ -345,11 +354,12 @@ const App: React.FC = () => {
               {activeTab === 'tasks' && <KanbanBoard prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'habits' && <MicroHabits prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'gratitude' && <GratitudeJar prefs={prefs} setPrefs={setPrefs} />}
+              {activeTab === 'statistics' && <Statistics prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'settings' && (
                 <div className="space-y-8">
                   <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 max-w-4xl">
-                    <h3 className="text-lg font-bold mb-2">Suggestions</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">Send suggestions to the host page.</p>
+                    <h3 className="text-lg font-bold mb-2">{t.headers?.suggestions || 'Suggestions'}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">{t.descriptions?.sendSuggestions || 'Send suggestions to the host page.'}</p>
                     <textarea
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
@@ -357,8 +367,8 @@ const App: React.FC = () => {
                       rows={3}
                     />
                     <div className="mt-3 flex gap-3">
-                      <button onClick={submitSuggestion} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Send</button>
-                      <button onClick={() => setSuggestionText('')} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg">Clear</button>
+                      <button onClick={submitSuggestion} className="px-4 py-2 bg-blue-600 text-white rounded-lg">{t.buttons?.send || 'Send'}</button>
+                      <button onClick={() => setSuggestionText('')} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg">{t.buttons?.clear || 'Clear'}</button>
                     </div>
                   </div>
                   <h2 className="text-4xl font-black text-slate-900 dark:text-white">{t.settings}</h2>
@@ -395,17 +405,17 @@ const App: React.FC = () => {
                         {t.reset}
                       </button>
                     </div>
-                    {auth.loggedIn && !auth.isGuest && (
+                    {auth.loggedIn && (
                       <div className="md:col-span-2 pt-6">
                         <button 
                           onClick={() => {
-                            if (confirm('Are you sure you want to logout?')) {
+                            if (confirm(auth.isGuest ? 'Exit guest mode?' : 'Are you sure you want to logout?')) {
                               handleAuth(null);
                             }
                           }}
                           className="w-full flex items-center justify-center p-8 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-3xl border border-red-100 dark:border-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all font-black text-xl"
                         >
-                          Logout
+                          {auth.isGuest ? 'Exit Guest Mode' : 'Logout'}
                         </button>
                       </div>
                     )}
@@ -435,7 +445,9 @@ const App: React.FC = () => {
                   )}
                 </div>
                 <span className="text-[10px] mt-1 uppercase tracking-tighter truncate max-w-full px-1">
-                  {item.id === 'dashboard' ? 'Home' : item.label.split(' ')[0]}
+                  {item.id === 'dashboard' 
+                    ? (prefs.language === 'ar' ? 'الرئيسية' : 'Home') 
+                    : (((item.label as string) || '').split(' ')[0] || (item.label as string) || '')}
                 </span>
               </button>
             ))}
