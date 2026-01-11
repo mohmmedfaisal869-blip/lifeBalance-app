@@ -20,7 +20,8 @@ import {
   Heart,
   Settings,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  User as UserIcon
 } from 'lucide-react';
 
 const STORAGE_KEY = 'lifebalance_user_data_v4';
@@ -243,6 +244,14 @@ const App: React.FC = () => {
     setPrefs(prev => ({ ...prev, theme: prev.theme === 'light' ? 'dark' : 'light' }));
   };
 
+  const [showAccountPanel, setShowAccountPanel] = useState(false);
+
+  const getAccountDetails = () => {
+    if (!auth.user?.email) return null;
+    const users = readUsers();
+    return users[auth.user.email.toLowerCase()] || null;
+  };
+
   const [suggestionText, setSuggestionText] = useState('');
 
   const submitSuggestion = () => {
@@ -392,6 +401,13 @@ const App: React.FC = () => {
                         <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${prefs.theme === 'dark' ? 'left-8' : 'left-1'}`} />
                       </div>
                     </button>
+                    <button 
+                      onClick={() => setShowAccountPanel(true)}
+                      className="flex items-center justify-between p-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 active:bg-slate-50 dark:active:bg-slate-700 transition-all hover:ring-2 hover:ring-purple-500/20"
+                    >
+                      <span className="flex items-center gap-4 font-bold text-xl text-slate-800 dark:text-slate-100"><UserIcon size={28} className="text-purple-500"/> {t.buttons?.account || 'Account'}</span>
+                      <span className="text-slate-600 dark:text-slate-400 font-black text-sm">{auth.user?.name || 'Guest'}</span>
+                    </button>
                     <div className="md:col-span-2 pt-6">
                       <button 
                         onClick={() => {
@@ -425,6 +441,117 @@ const App: React.FC = () => {
             </div>
           </div>
         </main>
+
+        {/* Account Panel Modal */}
+        {showAccountPanel && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                  <UserIcon size={28} className="text-purple-500" />
+                  {t.buttons?.account || 'Account'}
+                </h3>
+                <button 
+                  onClick={() => setShowAccountPanel(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {auth.loggedIn && auth.user ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Name</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">{auth.user.name}</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email / Phone</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white break-all">{auth.user.email || 'N/A'}</p>
+                  </div>
+
+                  {(() => {
+                    const details = getAccountDetails();
+                    return details ? (
+                      <>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Account Type</p>
+                          <p className="text-lg font-black text-slate-900 dark:text-white">{auth.isGuest ? 'Guest' : 'Registered'}</p>
+                        </div>
+
+                        {details.createdAt && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Created</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{new Date(details.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        )}
+
+                        {details.lastLogin && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Last Login</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{new Date(details.lastLogin).toLocaleDateString()}</p>
+                          </div>
+                        )}
+
+                        {details.totalTimeSpent && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Time Spent</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{Math.round(details.totalTimeSpent / 1000 / 60)} minutes</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 mt-6">
+                          <button 
+                            onClick={() => setShowAccountPanel(false)}
+                            className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-black transition hover:bg-slate-200 dark:hover:bg-slate-600"
+                          >
+                            Close
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+                                const users = readUsers();
+                                if (auth.user?.email) {
+                                  delete users[auth.user.email.toLowerCase()];
+                                  writeUsers(users);
+                                }
+                                handleAuth(null);
+                                setShowAccountPanel(false);
+                              }
+                            }}
+                            className="flex-1 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-black transition hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800"
+                          >
+                            Delete Account
+                          </button>
+                        </div>
+                      </>
+                    ) : null;
+                  })()}
+
+                  {auth.loggedIn && !auth.user && (
+                    <button 
+                      onClick={() => setShowAccountPanel(false)}
+                      className="w-full mt-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-black transition hover:bg-slate-200 dark:hover:bg-slate-600"
+                    >
+                      Close
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-600 dark:text-slate-400 font-bold mb-4">Please login to view account details.</p>
+                  <button 
+                    onClick={() => setShowAccountPanel(false)}
+                    className="w-full py-3 bg-blue-600 text-white rounded-2xl font-black transition hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Mobile Bottom Navigation */}
         <nav className="md:hidden flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-800/50 fixed bottom-0 left-0 right-0 z-50 h-[calc(5rem+env(safe-area-inset-bottom,0px))]">
