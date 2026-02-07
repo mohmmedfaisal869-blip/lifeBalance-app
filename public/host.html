@@ -12,17 +12,33 @@
       .small { font-size:12px; color:#475569 }
       .mono { font-family: monospace; font-size:12px }
       pre { white-space:pre-wrap; word-break:break-word }
+      .card { background:white; border-radius:16px; padding:20px; margin:12px 0; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:1px solid #e2e8f0 }
+      .card h3 { margin:0 0 12px 0; color:#0ea5e9 }
+      .stat-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px }
+      .stat-box { background:#f1f5f9; padding:16px; border-radius:12px; text-align:center }
+      .stat-box .value { font-size:28px; font-weight:800; color:#0f172a }
+      .stat-box .label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:1px }
+      .quran-card { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color:white }
+      .quran-card h3 { color:white }
+      .quran-card .stat-box { background:rgba(255,255,255,0.2) }
+      .quran-card .stat-box .value { color:white }
+      .quran-card .stat-box .label { color:rgba(255,255,255,0.8) }
+      .tab-buttons { display:flex; gap:8px; margin-bottom:16px }
+      .tab-btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600 }
+      .tab-btn.active { background:#0ea5e9; color:white }
+      .tab-btn:not(.active) { background:#e2e8f0 }
+      .tab-content { display:none }
+      .tab-content.active { display:block }
     </style>
   </head>
   <body>
-    <h1>Host Page — Registered Users</h1>
-    <p class="small">This page reads the <code>lifebalance_users</code> localStorage key and shows all registered accounts (including guests).</p>
-    <div id="content">Loading...</div>
+    <h1>🏠 Host Page — LifeBalance Admin</h1>
+    <p class="small">This page reads the <code>lifebalance_users</code> localStorage key and shows all registered accounts data.</p>
+    
     <div id="auth" style="max-width:480px;margin-top:16px"></div>
+    <div id="content">Loading...</div>
 
     <script>
-      // WARNING: this sets a default host password in localStorage if none exists.
-      // It's stored in plain text — acceptable for local dev but insecure for production.
       if (!localStorage.getItem('host_password')) {
         localStorage.setItem('host_password', 'Fsa12joh1moh2FMJZ');
       }
@@ -56,105 +72,209 @@
         location.reload();
       }
 
+      function msToHMS(ms){
+        if(!ms) return '0s';
+        let s = Math.floor(ms/1000);
+        const h = Math.floor(s/3600); s%=3600;
+        const m = Math.floor(s/60); s%=60;
+        return (h? h+'h ':'') + (m? m+'m ':'') + s+'s';
+      }
+
       function showAuth() {
         const auth = document.getElementById('auth');
         const stored = localStorage.getItem('host_password');
         if (!stored) {
-          auth.innerHTML = `<h3>Set Host Password</h3>
+          auth.innerHTML = `<div class="card"><h3>🔐 Set Host Password</h3>
             <p class="small">No host password set. Create one to protect this page.</p>
-            <div style="margin-top:8px"><input id="hpw" placeholder="New password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
-            <div style="margin-top:8px"><button id="hpwBtn" style="padding:8px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px">Set Password</button></div>`;
-          const hpwBtnEl = document.getElementById('hpwBtn');
-          if (hpwBtnEl) hpwBtnEl.onclick = function(){
-            const hpwEl = document.getElementById('hpw');
-            const v = hpwEl ? hpwEl.value : '';
+            <div style="margin-top:8px"><input id="hpw" placeholder="New password" type="password" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1" /></div>
+            <div style="margin-top:8px"><button id="hpwBtn" style="padding:10px 16px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Set Password</button></div></div>`;
+          document.getElementById('hpwBtn').onclick = function(){
+            const v = document.getElementById('hpw').value;
             if(!v) return alert('Please enter a password');
             localStorage.setItem('host_password', v);
             alert('Password saved. Please login.');
             showAuth();
           };
         } else {
-          auth.innerHTML = `<h3>Host Login</h3>
-            <div style="margin-top:8px"><label>Name</label><input id="hn" placeholder="admin name" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
-            <div style="margin-top:8px"><label>Password</label><input id="hpwLogin" placeholder="password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1" /></div>
-            <div style="margin-top:8px;display:flex;gap:8px"><button id="loginBtn" style="padding:8px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px">Login</button><button id="clearBtn" style="padding:8px 12px;background:#e2e8f0;border:none;border-radius:8px">Clear</button></div>`;
-          const loginBtnEl = document.getElementById('loginBtn');
-          const clearBtnEl = document.getElementById('clearBtn');
-          if (loginBtnEl) loginBtnEl.onclick = function(){
-            const hn = document.getElementById('hn');
-            const hpwLogin = document.getElementById('hpwLogin');
-            const name = hn ? hn.value : 'admin';
-            const pw = hpwLogin ? hpwLogin.value : '';
-            const storedPw = localStorage.getItem('host_password');
-            if(pw === storedPw){ setLoggedIn(name); render(); document.getElementById('auth').style.display='none'; }
+          auth.innerHTML = `<div class="card"><h3>🔐 Host Login</h3>
+            <div style="margin-top:8px"><label>Name</label><input id="hn" placeholder="admin name" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px" /></div>
+            <div style="margin-top:12px"><label>Password</label><input id="hpwLogin" placeholder="password" type="password" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px" /></div>
+            <div style="margin-top:12px;display:flex;gap:8px"><button id="loginBtn" style="padding:10px 16px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Login</button><button id="clearBtn" style="padding:10px 16px;background:#e2e8f0;border:none;border-radius:8px;cursor:pointer">Clear</button></div></div>`;
+          document.getElementById('loginBtn').onclick = function(){
+            const name = document.getElementById('hn').value || 'admin';
+            const pw = document.getElementById('hpwLogin').value;
+            if(pw === localStorage.getItem('host_password')){ setLoggedIn(name); render(); document.getElementById('auth').style.display='none'; }
             else alert('Incorrect password');
           };
-          if (clearBtnEl) clearBtnEl.onclick = function(){ const hn = document.getElementById('hn'); const hpwLogin = document.getElementById('hpwLogin'); if (hn) hn.value=''; if (hpwLogin) hpwLogin.value=''; };
+          document.getElementById('clearBtn').onclick = function(){ document.getElementById('hn').value=''; document.getElementById('hpwLogin').value=''; };
         }
       }
 
       function render() {
-        if(!isLoggedIn()){ showAuth(); document.getElementById('content').innerHTML = '<p>Please login to view host data.</p>'; return; }
+        if(!isLoggedIn()){ showAuth(); document.getElementById('content').innerHTML = '<p class="small" style="margin-top:20px">Please login to view host data.</p>'; return; }
+        
         const adminName = sessionStorage.getItem('host_admin_name')||'admin';
-        const logoutBtn = `<div style="margin-top:8px"><strong>Logged in as ${adminName}</strong> <button id="logoutBtn" style="margin-left:8px;padding:6px 10px;border-radius:6px">Logout</button></div>`;
-        document.getElementById('auth').innerHTML = logoutBtn;
-        const logoutBtnEl = document.getElementById('logoutBtn');
-        if (logoutBtnEl) logoutBtnEl.onclick = logout;
-        // continue to render table
-        // render suggestions (if any)
-        const suggestions = readSuggestions();
-        if (suggestions && suggestions.length) {
-          let shtml = '<h2>Suggestions</h2><table><thead><tr><th>Time</th><th>User</th><th>Message</th></tr></thead><tbody>';
-          for (const s of suggestions) {
-            const when = s.ts ? new Date(s.ts).toLocaleString() : '—';
-            const user = s.user ? (s.user.name ? s.user.name + (s.user.email ? ' <' + s.user.email + '>' : '') : (s.user.email||'')) : 'Anonymous';
-            shtml += `<tr><td class="mono">${when}</td><td>${user}</td><td><pre>${(s.text||'')}</pre></td></tr>`;
-          }
-          shtml += '</tbody></table>';
-          document.getElementById('content').innerHTML += shtml;
-        } else {
-          document.getElementById('content').innerHTML += '<h2>Suggestions</h2><p class="small">No suggestions found.</p>';
-        }
+        document.getElementById('auth').innerHTML = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <span style="background:#10b981;color:white;padding:8px 16px;border-radius:20px;font-weight:600">✓ Logged in as ${adminName}</span>
+          <button id="logoutBtn" style="padding:8px 16px;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer">Logout</button>
+          <button id="refreshBtn" style="padding:8px 16px;border-radius:8px;background:#0ea5e9;color:white;border:none;cursor:pointer">🔄 Refresh</button>
+        </div>`;
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('refreshBtn').onclick = render;
 
         const users = readUsers();
+        const suggestions = readSuggestions();
         const keys = Object.keys(users).sort((a,b)=> (users[b].lastLogin||0)-(users[a].lastLogin||0));
-        if (!keys.length) {
-          document.getElementById('content').innerHTML = '<p>No users found.</p>';
-          return;
-        }
 
-        function msToHMS(ms){
-          if(!ms) return '0s';
-          let s = Math.floor(ms/1000);
-          const h = Math.floor(s/3600); s%=3600;
-          const m = Math.floor(s/60); s%=60;
-          return (h? h+'h ':'') + (m? m+'m ':'') + s+'s';
-        }
+        // Calculate totals
+        let totalQuranPages = 0;
+        let totalWaterIntake = 0;
+        let totalTasks = 0;
+        let totalGratitude = 0;
+        
+        keys.forEach(k => {
+          const prefs = users[k].prefs || {};
+          totalQuranPages += prefs.quranTotalPages || 0;
+          totalWaterIntake += prefs.waterIntake || 0;
+          totalTasks += (prefs.tasks || []).length;
+          totalGratitude += (prefs.gratitudeNotes || []).length;
+        });
 
-        let html = '<table><thead><tr><th>Email</th><th>Name</th><th>Is Guest</th><th>Created</th><th>Last Login</th><th>Time Spent</th><th>Prefs (JSON)</th></tr></thead><tbody>';
-        for (const k of keys) {
+        let html = `
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="tab-btn" onclick="showTab('quran')">📖 Quran Stats</button>
+            <button class="tab-btn" onclick="showTab('users')">👥 Users</button>
+            <button class="tab-btn" onclick="showTab('suggestions')">💬 Suggestions</button>
+          </div>
+
+          <!-- Overview Tab -->
+          <div id="tab-overview" class="tab-content active">
+            <div class="card">
+              <h3>📊 Overall Statistics</h3>
+              <div class="stat-grid">
+                <div class="stat-box">
+                  <div class="value">${keys.length}</div>
+                  <div class="label">Total Users</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${totalQuranPages}</div>
+                  <div class="label">Quran Pages Read</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${totalWaterIntake} ml</div>
+                  <div class="label">Water Consumed</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${totalTasks}</div>
+                  <div class="label">Total Tasks</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${totalGratitude}</div>
+                  <div class="label">Gratitude Notes</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${suggestions.length}</div>
+                  <div class="label">Suggestions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quran Tab -->
+          <div id="tab-quran" class="tab-content">
+            <div class="card quran-card">
+              <h3>📖 Quran Reading Statistics</h3>
+              <div class="stat-grid">
+                <div class="stat-box">
+                  <div class="value">${totalQuranPages}</div>
+                  <div class="label">Total Pages Read (All Users)</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>📖 Per-User Quran Stats</h3>
+              <table>
+                <thead><tr><th>User</th><th>Pages Today</th><th>Daily Goal</th><th>Total Pages</th><th>Streak Days</th><th>Progress %</th></tr></thead>
+                <tbody>`;
+        
+        keys.forEach(k => {
           const u = users[k];
-          html += `<tr>`;
-          html += `<td class="mono">${(u.email||k)}</td>`;
-          html += `<td>${(u.name||'—')}</td>`;
-          html += `<td>${u.isGuest ? 'Yes' : 'No'}</td>`;
-          html += `<td>${u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>`;
-          html += `<td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>`;
-          html += `<td>${msToHMS(u.totalTimeSpent||0)}</td>`;
-          html += `<td><pre>${JSON.stringify(u.prefs||{}, null, 2)}</pre></td>`;
-          html += `</tr>`;
+          const prefs = u.prefs || {};
+          const pagesRead = prefs.quranPagesRead || 0;
+          const pagesGoal = prefs.quranPagesGoal || 5;
+          const totalPages = prefs.quranTotalPages || 0;
+          const streakDays = prefs.quranStreakDays || 0;
+          const progress = Math.min(100, (pagesRead / Math.max(1, pagesGoal)) * 100).toFixed(0);
+          html += `<tr>
+            <td>${u.name || k}</td>
+            <td><strong>${pagesRead}</strong></td>
+            <td>${pagesGoal}</td>
+            <td style="color:#d97706;font-weight:bold">${totalPages}</td>
+            <td style="color:#10b981;font-weight:bold">${streakDays} days</td>
+            <td>
+              <div style="background:#e2e8f0;border-radius:4px;height:20px;width:100px;overflow:hidden">
+                <div style="background:#d97706;height:100%;width:${progress}%"></div>
+              </div>
+              ${progress}%
+            </td>
+          </tr>`;
+        });
+        
+        html += `</tbody></table></div></div>
+
+          <!-- Users Tab -->
+          <div id="tab-users" class="tab-content">
+            <div class="card">
+              <h3>👥 Registered Users (${keys.length})</h3>
+              <table>
+                <thead><tr><th>Email</th><th>Name</th><th>Guest?</th><th>Created</th><th>Last Login</th><th>Time Spent</th></tr></thead>
+                <tbody>`;
+        
+        keys.forEach(k => {
+          const u = users[k];
+          html += `<tr>
+            <td class="mono">${u.email || k}</td>
+            <td>${u.name || '—'}</td>
+            <td>${u.isGuest ? '✓ Yes' : 'No'}</td>
+            <td>${u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
+            <td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>
+            <td>${msToHMS(u.totalTimeSpent || 0)}</td>
+          </tr>`;
+        });
+        
+        html += `</tbody></table></div></div>
+
+          <!-- Suggestions Tab -->
+          <div id="tab-suggestions" class="tab-content">
+            <div class="card">
+              <h3>💬 User Suggestions (${suggestions.length})</h3>`;
+        
+        if (suggestions.length) {
+          html += `<table><thead><tr><th>Time</th><th>User</th><th>Message</th></tr></thead><tbody>`;
+          suggestions.forEach(s => {
+            const when = s.ts ? new Date(s.ts).toLocaleString() : '—';
+            const user = s.user ? (s.user.name || s.user.email || 'Unknown') : 'Anonymous';
+            html += `<tr><td class="mono">${when}</td><td>${user}</td><td><pre>${s.text || ''}</pre></td></tr>`;
+          });
+          html += `</tbody></table>`;
+        } else {
+          html += `<p class="small">No suggestions yet.</p>`;
         }
-        html += '</tbody></table>';
-        document.getElementById('content').innerHTML += html;
+        
+        html += `</div></div>`;
+
+        document.getElementById('content').innerHTML = html;
+      }
+
+      function showTab(name) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        event.target.classList.add('active');
       }
 
       render();
-
-      // refresh button
-      const btn = document.createElement('button');
-      btn.textContent = 'Refresh';
-      btn.onclick = render;
-      document.body.insertBefore(btn, document.getElementById('content'));
     </script>
   </body>
 </html>

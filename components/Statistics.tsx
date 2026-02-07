@@ -465,6 +465,67 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
           </div>
         </div>
 
+        {/* Quran Statistics */}
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-black flex items-center gap-3 text-slate-900 dark:text-white">
+              <Book className="text-amber-600" size={28} />
+              {t.headers.quranStats || 'Quran Statistics'}
+            </h3>
+            <button
+              onClick={() => setActiveTab('quran')}
+              className="text-xs font-black uppercase tracking-widest text-amber-600 hover:text-amber-700"
+            >
+              {t.headers.viewDetails} {t.units.arrow}
+            </button>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-5xl font-black text-slate-900 dark:text-white tabular-nums">{prefs.quranPagesRead || 0}</div>
+                <div className="text-sm font-black text-slate-400 uppercase tracking-widest mt-1">{t.headers.pagesRead || 'Pages Today'}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-black text-amber-600 tabular-nums">
+                  {Math.min(100, ((prefs.quranPagesRead || 0) / Math.max(1, prefs.quranPagesGoal || 5)) * 100).toFixed(0)}%
+                </div>
+                <div className="text-sm font-black text-slate-400 uppercase tracking-widest">{t.headers.ofGoal || 'of Goal'}</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-widest">{t.headers.quranProgress || 'Daily Progress'}</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-4 rounded-full overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 h-full transition-all duration-1000 rounded-full"
+                  style={{ width: `${Math.min(100, ((prefs.quranPagesRead || 0) / Math.max(1, prefs.quranPagesGoal || 5)) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="text-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl">
+                <div className="text-3xl font-black text-amber-600 tabular-nums">{prefs.quranTotalPages || 0}</div>
+                <div className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">{t.headers.totalPagesRead || 'Total Pages'}</div>
+              </div>
+              <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl">
+                <div className="text-3xl font-black text-emerald-600 tabular-nums">{prefs.quranStreakDays || 0}</div>
+                <div className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">{t.headers.quranStreak || 'Day Streak'}</div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-widest">{t.headers.pagesGoal || 'Daily Goal'}</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{prefs.quranPagesGoal || 5} pages</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Achievements */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700 lg:col-span-2">
           <div className="flex items-center justify-between mb-8">
