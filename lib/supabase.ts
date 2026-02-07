@@ -15,6 +15,11 @@ interface UserData {
   quran_streak: number;
   tasks_completed: number;
   gratitude_count: number;
+  full_prefs?: any;
+  sleep_data?: any;
+  tasks_data?: any;
+  gratitude_data?: any;
+  habits_data?: any;
   created_at?: string;
   updated_at?: string;
 }

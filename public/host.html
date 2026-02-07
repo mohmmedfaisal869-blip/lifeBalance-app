@@ -31,19 +31,63 @@
       .tab-content.active { display:block }
       .loading { text-align:center; padding:40px; color:#64748b }
       .db-badge { background:#10b981; color:white; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:8px }
+      .user-row { cursor:pointer; transition: background 0.2s }
+      .user-row:hover { background:#f0f9ff !important }
+      
+      /* Modal styles */
+      .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:1000; padding:20px; overflow-y:auto }
+      .modal-overlay.active { display:flex }
+      .modal { background:white; border-radius:20px; max-width:800px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 50px rgba(0,0,0,0.25) }
+      .modal-header { background:linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color:white; padding:24px; border-radius:20px 20px 0 0; position:sticky; top:0 }
+      .modal-header h2 { margin:0 0 8px 0; font-size:24px }
+      .modal-header .email { opacity:0.9; font-size:14px }
+      .modal-close { position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); border:none; color:white; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:20px }
+      .modal-close:hover { background:rgba(255,255,255,0.3) }
+      .modal-body { padding:24px }
+      .section { margin-bottom:24px }
+      .section h4 { margin:0 0 12px 0; color:#0ea5e9; font-size:16px; display:flex; align-items:center; gap:8px }
+      .section-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px }
+      .section-stat { background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0 }
+      .section-stat .val { font-size:20px; font-weight:700; color:#0f172a }
+      .section-stat .lbl { font-size:11px; color:#64748b; text-transform:uppercase }
+      .task-item { background:#f8fafc; padding:12px; border-radius:8px; margin:8px 0; border-left:4px solid #0ea5e9 }
+      .task-item.done { border-left-color:#10b981; opacity:0.7 }
+      .gratitude-item { background:#fef3c7; padding:12px; border-radius:8px; margin:8px 0; border-left:4px solid #f59e0b }
+      .badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600 }
+      .badge-green { background:#d1fae5; color:#059669 }
+      .badge-blue { background:#dbeafe; color:#2563eb }
+      .badge-orange { background:#fed7aa; color:#c2410c }
+      .badge-gray { background:#e2e8f0; color:#475569 }
     </style>
   </head>
   <body>
     <h1>🏠 Host Page — LifeBalance Admin <span class="db-badge">☁️ Cloud Database</span></h1>
-    <p class="small">This page reads user data from Supabase cloud database — works from any browser/device!</p>
+    <p class="small">Click on any user to see their full details! Data synced from Supabase cloud.</p>
     
     <div id="auth" style="max-width:480px;margin-top:16px"></div>
     <div id="content"><div class="loading">⏳ Loading from database...</div></div>
+    
+    <!-- User Detail Modal -->
+    <div id="userModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <button class="modal-close" onclick="closeModal()">✕</button>
+          <h2 id="modalUserName">User Name</h2>
+          <div class="email" id="modalUserEmail">user@email.com</div>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Content will be inserted here -->
+        </div>
+      </div>
+    </div>
 
     <script>
       // Supabase configuration
       const SUPABASE_URL = 'https://hagdmdogxwuueooczqji.supabase.co';
       const SUPABASE_KEY = 'sb_publishable_aS384Eu8SSr5ij21ykCkMA_nMtbOR8A';
+      
+      // Store users globally for modal access
+      let allUsers = [];
 
       // Fetch users from Supabase
       async function fetchUsersFromSupabase() {
@@ -86,6 +130,189 @@
         sessionStorage.removeItem('host_logged_in');
         sessionStorage.removeItem('host_admin_name');
         location.reload();
+      }
+      
+      function closeModal() {
+        document.getElementById('userModal').classList.remove('active');
+      }
+      
+      function showUserDetail(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
+        
+        document.getElementById('modalUserName').textContent = user.name || 'Unknown User';
+        document.getElementById('modalUserEmail').textContent = user.email || user.id;
+        
+        const prefs = user.full_prefs || {};
+        const sleepData = user.sleep_data || {};
+        const tasksData = user.tasks_data || [];
+        const gratitudeData = user.gratitude_data || [];
+        
+        let html = `
+          <!-- Basic Info -->
+          <div class="section">
+            <h4>👤 Basic Information</h4>
+            <div class="section-grid">
+              <div class="section-stat">
+                <div class="val">${user.name || '—'}</div>
+                <div class="lbl">Name</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${user.is_guest ? 'Yes' : 'No'}</div>
+                <div class="lbl">Guest Account</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</div>
+                <div class="lbl">Joined</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${user.updated_at ? new Date(user.updated_at).toLocaleString() : '—'}</div>
+                <div class="lbl">Last Active</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Settings -->
+          <div class="section">
+            <h4>⚙️ User Settings</h4>
+            <div class="section-grid">
+              <div class="section-stat">
+                <div class="val">${prefs.language === 'ar' ? '🇸🇦 Arabic' : '🇺🇸 English'}</div>
+                <div class="lbl">Language</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${prefs.theme === 'dark' ? '🌙 Dark' : '☀️ Light'}</div>
+                <div class="lbl">Theme</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${prefs.streak || 0} days</div>
+                <div class="lbl">App Streak</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Water Stats -->
+          <div class="section">
+            <h4>💧 Water Tracker</h4>
+            <div class="section-grid">
+              <div class="section-stat">
+                <div class="val" style="color:#0ea5e9">${user.water_intake || 0} ml</div>
+                <div class="lbl">Today's Intake</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${user.water_goal || 2000} ml</div>
+                <div class="lbl">Daily Goal</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${Math.round(((user.water_intake || 0) / (user.water_goal || 2000)) * 100)}%</div>
+                <div class="lbl">Progress</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quran Stats -->
+          <div class="section">
+            <h4>📖 Quran Reading</h4>
+            <div class="section-grid">
+              <div class="section-stat">
+                <div class="val" style="color:#d97706">${user.quran_pages_today || 0}</div>
+                <div class="lbl">Pages Today</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${user.quran_daily_goal || 5}</div>
+                <div class="lbl">Daily Goal</div>
+              </div>
+              <div class="section-stat">
+                <div class="val" style="color:#d97706">${user.quran_total_pages || 0}</div>
+                <div class="lbl">Total Pages</div>
+              </div>
+              <div class="section-stat">
+                <div class="val" style="color:#10b981">${user.quran_streak || 0} days</div>
+                <div class="lbl">Reading Streak</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${prefs.quranEdition || 'kingFahd'}</div>
+                <div class="lbl">Quran Edition</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Sleep Stats -->
+          <div class="section">
+            <h4>😴 Sleep Settings</h4>
+            <div class="section-grid">
+              <div class="section-stat">
+                <div class="val">${sleepData.wakeupTime || prefs.wakeupTime || '07:00'}</div>
+                <div class="lbl">Weekday Wake</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${sleepData.weekendWakeupTime || prefs.weekendWakeupTime || '09:00'}</div>
+                <div class="lbl">Weekend Wake</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${sleepData.isAlarmEnabled ? '✅ On' : '❌ Off'}</div>
+                <div class="lbl">Alarm</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tasks -->
+          <div class="section">
+            <h4>✅ Tasks (${tasksData.length} recent)</h4>
+            <div class="section-grid" style="margin-bottom:12px">
+              <div class="section-stat">
+                <div class="val" style="color:#10b981">${user.tasks_completed || 0}</div>
+                <div class="lbl">Completed</div>
+              </div>
+              <div class="section-stat">
+                <div class="val">${tasksData.filter(t => t.status !== 'done').length}</div>
+                <div class="lbl">Pending</div>
+              </div>
+            </div>`;
+        
+        if (tasksData.length > 0) {
+          html += `<div style="max-height:200px;overflow-y:auto">`;
+          tasksData.slice(0, 10).forEach(task => {
+            const isDone = task.status === 'done';
+            const priorityColors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+            html += `<div class="task-item ${isDone ? 'done' : ''}">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong>${isDone ? '✅' : '⏳'} ${task.title || 'Untitled Task'}</strong>
+                <span class="badge" style="background:${priorityColors[task.priority] || '#e2e8f0'}20;color:${priorityColors[task.priority] || '#475569'}">${task.priority || 'medium'}</span>
+              </div>
+              ${task.description ? `<div class="small" style="margin-top:4px">${task.description}</div>` : ''}
+            </div>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<p class="small">No tasks recorded yet.</p>`;
+        }
+        
+        html += `</div>
+          
+          <!-- Gratitude -->
+          <div class="section">
+            <h4>💛 Gratitude Notes (${gratitudeData.length} total)</h4>`;
+        
+        if (gratitudeData.length > 0) {
+          html += `<div style="max-height:200px;overflow-y:auto">`;
+          gratitudeData.slice(0, 10).forEach(note => {
+            const noteText = typeof note === 'string' ? note : (note.text || note.note || JSON.stringify(note));
+            const noteDate = note.date ? new Date(note.date).toLocaleDateString() : '';
+            html += `<div class="gratitude-item">
+              <div>${noteText}</div>
+              ${noteDate ? `<div class="small" style="margin-top:4px">${noteDate}</div>` : ''}
+            </div>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<p class="small">No gratitude notes yet.</p>`;
+        }
+        
+        html += `</div>`;
+        
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('userModal').classList.add('active');
       }
 
       function showAuth() {
@@ -133,7 +360,7 @@
         document.getElementById('content').innerHTML = '<div class="loading">⏳ Loading from Supabase...</div>';
         
         // Fetch from Supabase
-        const users = await fetchUsersFromSupabase();
+        allUsers = await fetchUsersFromSupabase();
         const suggestions = readSuggestions();
 
         // Calculate totals
@@ -142,7 +369,7 @@
         let totalTasks = 0;
         let totalGratitude = 0;
         
-        users.forEach(u => {
+        allUsers.forEach(u => {
           totalQuranPages += u.quran_total_pages || 0;
           totalWaterIntake += u.water_intake || 0;
           totalTasks += u.tasks_completed || 0;
@@ -152,7 +379,8 @@
         let html = `
           <div class="tab-buttons">
             <button class="tab-btn active" onclick="showTab('overview')">📊 Overview</button>
-            <button class="tab-btn" onclick="showTab('quran')">📖 Quran Stats</button>
+            <button class="tab-btn" onclick="showTab('quran')">📖 Quran</button>
+            <button class="tab-btn" onclick="showTab('water')">💧 Water</button>
             <button class="tab-btn" onclick="showTab('users')">👥 Users</button>
             <button class="tab-btn" onclick="showTab('suggestions')">💬 Suggestions</button>
           </div>
@@ -163,20 +391,20 @@
               <h3>📊 Overall Statistics</h3>
               <div class="stat-grid">
                 <div class="stat-box">
-                  <div class="value">${users.length}</div>
+                  <div class="value">${allUsers.length}</div>
                   <div class="label">Total Users</div>
                 </div>
                 <div class="stat-box">
                   <div class="value">${totalQuranPages}</div>
-                  <div class="label">Quran Pages Read</div>
+                  <div class="label">Quran Pages</div>
                 </div>
                 <div class="stat-box">
-                  <div class="value">${totalWaterIntake} ml</div>
+                  <div class="value">${(totalWaterIntake / 1000).toFixed(1)}L</div>
                   <div class="label">Water Consumed</div>
                 </div>
                 <div class="stat-box">
                   <div class="value">${totalTasks}</div>
-                  <div class="label">Tasks Completed</div>
+                  <div class="label">Tasks Done</div>
                 </div>
                 <div class="stat-box">
                   <div class="value">${totalGratitude}</div>
@@ -188,7 +416,23 @@
                 </div>
               </div>
             </div>
-          </div>
+            
+            <div class="card">
+              <h3>👥 Quick User List <span class="small">(click to see details)</span></h3>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">`;
+        
+        allUsers.forEach(u => {
+          html += `<div onclick="showUserDetail('${u.id}')" style="background:#f8fafc;padding:16px;border-radius:12px;cursor:pointer;border:1px solid #e2e8f0;transition:all 0.2s" onmouseover="this.style.borderColor='#0ea5e9';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='none'">
+            <div style="font-weight:600;color:#0f172a">${u.name || 'Unknown'}</div>
+            <div class="small">${u.email || u.id}</div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+              <span class="badge badge-blue">📖 ${u.quran_total_pages || 0}</span>
+              <span class="badge badge-green">✅ ${u.tasks_completed || 0}</span>
+            </div>
+          </div>`;
+        });
+        
+        html += `</div></div></div>
 
           <!-- Quran Tab -->
           <div id="tab-quran" class="tab-content">
@@ -197,31 +441,75 @@
               <div class="stat-grid">
                 <div class="stat-box">
                   <div class="value">${totalQuranPages}</div>
-                  <div class="label">Total Pages Read (All Users)</div>
+                  <div class="label">Total Pages (All Users)</div>
+                </div>
+                <div class="stat-box">
+                  <div class="value">${allUsers.reduce((sum, u) => sum + (u.quran_pages_today || 0), 0)}</div>
+                  <div class="label">Pages Read Today</div>
                 </div>
               </div>
             </div>
             <div class="card">
-              <h3>📖 Per-User Quran Stats</h3>
+              <h3>📖 Per-User Quran Stats <span class="small">(click row for details)</span></h3>
               <table>
-                <thead><tr><th>User</th><th>Pages Today</th><th>Daily Goal</th><th>Total Pages</th><th>Streak Days</th><th>Progress %</th></tr></thead>
+                <thead><tr><th>User</th><th>Today</th><th>Goal</th><th>Total</th><th>Streak</th><th>Progress</th></tr></thead>
                 <tbody>`;
         
-        users.forEach(u => {
+        allUsers.forEach(u => {
           const pagesRead = u.quran_pages_today || 0;
           const pagesGoal = u.quran_daily_goal || 5;
           const totalPages = u.quran_total_pages || 0;
           const streakDays = u.quran_streak || 0;
           const progress = Math.min(100, (pagesRead / Math.max(1, pagesGoal)) * 100).toFixed(0);
-          html += `<tr>
-            <td>${u.name || u.email || u.id}</td>
+          html += `<tr class="user-row" onclick="showUserDetail('${u.id}')">
+            <td><strong>${u.name || u.email || u.id}</strong></td>
             <td><strong>${pagesRead}</strong></td>
             <td>${pagesGoal}</td>
             <td style="color:#d97706;font-weight:bold">${totalPages}</td>
-            <td style="color:#10b981;font-weight:bold">${streakDays} days</td>
+            <td style="color:#10b981;font-weight:bold">${streakDays}d</td>
             <td>
-              <div style="background:#e2e8f0;border-radius:4px;height:20px;width:100px;overflow:hidden">
+              <div style="background:#e2e8f0;border-radius:4px;height:20px;width:80px;overflow:hidden;display:inline-block;vertical-align:middle">
                 <div style="background:#d97706;height:100%;width:${progress}%"></div>
+              </div>
+              ${progress}%
+            </td>
+          </tr>`;
+        });
+        
+        html += `</tbody></table></div></div>
+
+          <!-- Water Tab -->
+          <div id="tab-water" class="tab-content">
+            <div class="card" style="background:linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);color:white">
+              <h3 style="color:white">💧 Water Tracking Statistics</h3>
+              <div class="stat-grid">
+                <div class="stat-box" style="background:rgba(255,255,255,0.2)">
+                  <div class="value" style="color:white">${(totalWaterIntake / 1000).toFixed(1)}L</div>
+                  <div class="label" style="color:rgba(255,255,255,0.8)">Total Consumed</div>
+                </div>
+                <div class="stat-box" style="background:rgba(255,255,255,0.2)">
+                  <div class="value" style="color:white">${allUsers.length > 0 ? Math.round(totalWaterIntake / allUsers.length) : 0} ml</div>
+                  <div class="label" style="color:rgba(255,255,255,0.8)">Avg Per User</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>💧 Per-User Water Stats <span class="small">(click row for details)</span></h3>
+              <table>
+                <thead><tr><th>User</th><th>Today</th><th>Goal</th><th>Progress</th></tr></thead>
+                <tbody>`;
+        
+        allUsers.forEach(u => {
+          const intake = u.water_intake || 0;
+          const goal = u.water_goal || 2000;
+          const progress = Math.min(100, (intake / goal) * 100).toFixed(0);
+          html += `<tr class="user-row" onclick="showUserDetail('${u.id}')">
+            <td><strong>${u.name || u.email || u.id}</strong></td>
+            <td style="color:#0ea5e9;font-weight:bold">${intake} ml</td>
+            <td>${goal} ml</td>
+            <td>
+              <div style="background:#e2e8f0;border-radius:4px;height:20px;width:80px;overflow:hidden;display:inline-block;vertical-align:middle">
+                <div style="background:#0ea5e9;height:100%;width:${progress}%"></div>
               </div>
               ${progress}%
             </td>
@@ -233,19 +521,20 @@
           <!-- Users Tab -->
           <div id="tab-users" class="tab-content">
             <div class="card">
-              <h3>👥 Registered Users (${users.length})</h3>
+              <h3>👥 All Users (${allUsers.length}) <span class="small">— click any row for full details</span></h3>
               <table>
-                <thead><tr><th>Email</th><th>Name</th><th>Guest?</th><th>Water</th><th>Quran Today</th><th>Last Updated</th></tr></thead>
+                <thead><tr><th>Email</th><th>Name</th><th>Type</th><th>Quran</th><th>Water</th><th>Tasks</th><th>Last Active</th></tr></thead>
                 <tbody>`;
         
-        users.forEach(u => {
-          html += `<tr>
+        allUsers.forEach(u => {
+          html += `<tr class="user-row" onclick="showUserDetail('${u.id}')">
             <td class="mono">${u.email || u.id}</td>
             <td>${u.name || '—'}</td>
-            <td>${u.is_guest ? '✓ Yes' : 'No'}</td>
-            <td>${u.water_intake || 0} / ${u.water_goal || 2000} ml</td>
-            <td>${u.quran_pages_today || 0} pages</td>
-            <td>${u.updated_at ? new Date(u.updated_at).toLocaleString() : '—'}</td>
+            <td>${u.is_guest ? '<span class="badge badge-gray">Guest</span>' : '<span class="badge badge-green">Member</span>'}</td>
+            <td><span class="badge badge-orange">📖 ${u.quran_total_pages || 0}</span></td>
+            <td><span class="badge badge-blue">💧 ${u.water_intake || 0}ml</span></td>
+            <td><span class="badge badge-green">✅ ${u.tasks_completed || 0}</span></td>
+            <td class="small">${u.updated_at ? new Date(u.updated_at).toLocaleString() : '—'}</td>
           </tr>`;
         });
         

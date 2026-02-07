@@ -187,7 +187,7 @@ const App: React.FC = () => {
         users[email].lastLogin = users[email].lastLogin || Date.now();
         localStorage.setItem('lifebalance_users', JSON.stringify(users));
         
-        // Sync to Supabase for cross-browser host page access
+        // Sync ALL data to Supabase for cross-browser host page access
         syncUserToSupabase({
           id: email,
           email: email,
@@ -201,6 +201,27 @@ const App: React.FC = () => {
           quran_streak: prefs.quranStreakDays || 0,
           tasks_completed: (prefs.tasks || []).filter((t: any) => t.status === 'done').length,
           gratitude_count: (prefs.gratitudeNotes || []).length,
+          // Store full data for detailed view
+          full_prefs: {
+            language: prefs.language,
+            theme: prefs.theme,
+            waterGoal: prefs.waterGoal,
+            wakeupTime: prefs.wakeupTime,
+            weekendWakeupTime: prefs.weekendWakeupTime,
+            isAlarmEnabled: prefs.isAlarmEnabled,
+            streak: prefs.streak,
+            lastActivityDate: prefs.lastActivityDate,
+            quranEdition: prefs.quranEdition,
+          },
+          sleep_data: {
+            wakeupTime: prefs.wakeupTime,
+            weekendWakeupTime: prefs.weekendWakeupTime,
+            isAlarmEnabled: prefs.isAlarmEnabled,
+            sleepHistory: (prefs.sleepHistory || []).slice(-10), // Last 10 entries
+          },
+          tasks_data: (prefs.tasks || []).slice(-20), // Last 20 tasks
+          gratitude_data: (prefs.gratitudeNotes || []).slice(-20), // Last 20 notes
+          habits_data: [], // Will be populated if habits feature exists
         });
       }
     } catch {}
