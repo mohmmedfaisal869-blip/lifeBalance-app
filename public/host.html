@@ -23,31 +23,47 @@
       .quran-card .stat-box { background:rgba(255,255,255,0.2) }
       .quran-card .stat-box .value { color:white }
       .quran-card .stat-box .label { color:rgba(255,255,255,0.8) }
-      .tab-buttons { display:flex; gap:8px; margin-bottom:16px }
+      .tab-buttons { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap }
       .tab-btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600 }
       .tab-btn.active { background:#0ea5e9; color:white }
       .tab-btn:not(.active) { background:#e2e8f0 }
       .tab-content { display:none }
       .tab-content.active { display:block }
+      .loading { text-align:center; padding:40px; color:#64748b }
+      .db-badge { background:#10b981; color:white; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:8px }
     </style>
   </head>
   <body>
-    <h1>🏠 Host Page — LifeBalance Admin</h1>
-    <p class="small">This page reads the <code>lifebalance_users</code> localStorage key and shows all registered accounts data.</p>
+    <h1>🏠 Host Page — LifeBalance Admin <span class="db-badge">☁️ Cloud Database</span></h1>
+    <p class="small">This page reads user data from Supabase cloud database — works from any browser/device!</p>
     
     <div id="auth" style="max-width:480px;margin-top:16px"></div>
-    <div id="content">Loading...</div>
+    <div id="content"><div class="loading">⏳ Loading from database...</div></div>
 
     <script>
-      if (!localStorage.getItem('host_password')) {
-        localStorage.setItem('host_password', 'Fsa12joh1moh2FMJZ');
+      // Supabase configuration
+      const SUPABASE_URL = 'https://hagdmdogxwuueooczqji.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_aS384Eu8SSr5ij21ykCkMA_nMtbOR8A';
+
+      // Fetch users from Supabase
+      async function fetchUsersFromSupabase() {
+        try {
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*&order=updated_at.desc`, {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          });
+          if (!response.ok) throw new Error('Failed to fetch');
+          return await response.json();
+        } catch (error) {
+          console.error('Supabase fetch error:', error);
+          return [];
+        }
       }
 
-      function readUsers() {
-        try {
-          const raw = localStorage.getItem('lifebalance_users');
-          return raw ? JSON.parse(raw) : {};
-        } catch (e) { return {}; }
+      if (!localStorage.getItem('host_password')) {
+        localStorage.setItem('host_password', 'Fsa12joh1moh2FMJZ');
       }
 
       function readSuggestions() {
@@ -70,14 +86,6 @@
         sessionStorage.removeItem('host_logged_in');
         sessionStorage.removeItem('host_admin_name');
         location.reload();
-      }
-
-      function msToHMS(ms){
-        if(!ms) return '0s';
-        let s = Math.floor(ms/1000);
-        const h = Math.floor(s/3600); s%=3600;
-        const m = Math.floor(s/60); s%=60;
-        return (h? h+'h ':'') + (m? m+'m ':'') + s+'s';
       }
 
       function showAuth() {
@@ -110,11 +118,11 @@
         }
       }
 
-      function render() {
+      async function render() {
         if(!isLoggedIn()){ showAuth(); document.getElementById('content').innerHTML = '<p class="small" style="margin-top:20px">Please login to view host data.</p>'; return; }
         
         const adminName = sessionStorage.getItem('host_admin_name')||'admin';
-        document.getElementById('auth').innerHTML = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        document.getElementById('auth').innerHTML = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <span style="background:#10b981;color:white;padding:8px 16px;border-radius:20px;font-weight:600">✓ Logged in as ${adminName}</span>
           <button id="logoutBtn" style="padding:8px 16px;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer">Logout</button>
           <button id="refreshBtn" style="padding:8px 16px;border-radius:8px;background:#0ea5e9;color:white;border:none;cursor:pointer">🔄 Refresh</button>
@@ -122,9 +130,11 @@
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('refreshBtn').onclick = render;
 
-        const users = readUsers();
+        document.getElementById('content').innerHTML = '<div class="loading">⏳ Loading from Supabase...</div>';
+        
+        // Fetch from Supabase
+        const users = await fetchUsersFromSupabase();
         const suggestions = readSuggestions();
-        const keys = Object.keys(users).sort((a,b)=> (users[b].lastLogin||0)-(users[a].lastLogin||0));
 
         // Calculate totals
         let totalQuranPages = 0;
@@ -132,12 +142,11 @@
         let totalTasks = 0;
         let totalGratitude = 0;
         
-        keys.forEach(k => {
-          const prefs = users[k].prefs || {};
-          totalQuranPages += prefs.quranTotalPages || 0;
-          totalWaterIntake += prefs.waterIntake || 0;
-          totalTasks += (prefs.tasks || []).length;
-          totalGratitude += (prefs.gratitudeNotes || []).length;
+        users.forEach(u => {
+          totalQuranPages += u.quran_total_pages || 0;
+          totalWaterIntake += u.water_intake || 0;
+          totalTasks += u.tasks_completed || 0;
+          totalGratitude += u.gratitude_count || 0;
         });
 
         let html = `
@@ -154,7 +163,7 @@
               <h3>📊 Overall Statistics</h3>
               <div class="stat-grid">
                 <div class="stat-box">
-                  <div class="value">${keys.length}</div>
+                  <div class="value">${users.length}</div>
                   <div class="label">Total Users</div>
                 </div>
                 <div class="stat-box">
@@ -167,7 +176,7 @@
                 </div>
                 <div class="stat-box">
                   <div class="value">${totalTasks}</div>
-                  <div class="label">Total Tasks</div>
+                  <div class="label">Tasks Completed</div>
                 </div>
                 <div class="stat-box">
                   <div class="value">${totalGratitude}</div>
@@ -198,16 +207,14 @@
                 <thead><tr><th>User</th><th>Pages Today</th><th>Daily Goal</th><th>Total Pages</th><th>Streak Days</th><th>Progress %</th></tr></thead>
                 <tbody>`;
         
-        keys.forEach(k => {
-          const u = users[k];
-          const prefs = u.prefs || {};
-          const pagesRead = prefs.quranPagesRead || 0;
-          const pagesGoal = prefs.quranPagesGoal || 5;
-          const totalPages = prefs.quranTotalPages || 0;
-          const streakDays = prefs.quranStreakDays || 0;
+        users.forEach(u => {
+          const pagesRead = u.quran_pages_today || 0;
+          const pagesGoal = u.quran_daily_goal || 5;
+          const totalPages = u.quran_total_pages || 0;
+          const streakDays = u.quran_streak || 0;
           const progress = Math.min(100, (pagesRead / Math.max(1, pagesGoal)) * 100).toFixed(0);
           html += `<tr>
-            <td>${u.name || k}</td>
+            <td>${u.name || u.email || u.id}</td>
             <td><strong>${pagesRead}</strong></td>
             <td>${pagesGoal}</td>
             <td style="color:#d97706;font-weight:bold">${totalPages}</td>
@@ -226,20 +233,19 @@
           <!-- Users Tab -->
           <div id="tab-users" class="tab-content">
             <div class="card">
-              <h3>👥 Registered Users (${keys.length})</h3>
+              <h3>👥 Registered Users (${users.length})</h3>
               <table>
-                <thead><tr><th>Email</th><th>Name</th><th>Guest?</th><th>Created</th><th>Last Login</th><th>Time Spent</th></tr></thead>
+                <thead><tr><th>Email</th><th>Name</th><th>Guest?</th><th>Water</th><th>Quran Today</th><th>Last Updated</th></tr></thead>
                 <tbody>`;
         
-        keys.forEach(k => {
-          const u = users[k];
+        users.forEach(u => {
           html += `<tr>
-            <td class="mono">${u.email || k}</td>
+            <td class="mono">${u.email || u.id}</td>
             <td>${u.name || '—'}</td>
-            <td>${u.isGuest ? '✓ Yes' : 'No'}</td>
-            <td>${u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
-            <td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>
-            <td>${msToHMS(u.totalTimeSpent || 0)}</td>
+            <td>${u.is_guest ? '✓ Yes' : 'No'}</td>
+            <td>${u.water_intake || 0} / ${u.water_goal || 2000} ml</td>
+            <td>${u.quran_pages_today || 0} pages</td>
+            <td>${u.updated_at ? new Date(u.updated_at).toLocaleString() : '—'}</td>
           </tr>`;
         });
         

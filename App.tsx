@@ -10,6 +10,7 @@ import GratitudeJar from './components/GratitudeJar.tsx';
 import QuranReminder from './components/QuranReminder.tsx';
 import Statistics from './components/Statistics.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
+import { syncUserToSupabase } from './lib/supabase.ts';
 import { 
   LayoutDashboard, 
   Droplets, 
@@ -185,6 +186,22 @@ const App: React.FC = () => {
         users[email].prefs = prefs;
         users[email].lastLogin = users[email].lastLogin || Date.now();
         localStorage.setItem('lifebalance_users', JSON.stringify(users));
+        
+        // Sync to Supabase for cross-browser host page access
+        syncUserToSupabase({
+          id: email,
+          email: email,
+          name: a.user.name || null,
+          is_guest: a.isGuest || false,
+          water_intake: prefs.waterIntake || 0,
+          water_goal: Math.round((prefs.waterGoal || 2) * 1000),
+          quran_pages_today: prefs.quranPagesRead || 0,
+          quran_daily_goal: prefs.quranPagesGoal || 5,
+          quran_total_pages: prefs.quranTotalPages || 0,
+          quran_streak: prefs.quranStreakDays || 0,
+          tasks_completed: (prefs.tasks || []).filter((t: any) => t.status === 'done').length,
+          gratitude_count: (prefs.gratitudeNotes || []).length,
+        });
       }
     } catch {}
   }, [prefs]);
