@@ -13,6 +13,7 @@ export const translations = {
     tasks: 'Task Reminders',
     microHabits: 'Micro-Habits',
     gratitudeJar: 'Gratitude Jar',
+    quranReminder: 'Quran Reading',
     waterGoal: 'Daily Goal',
     ml: 'ml',
     liters: 'L',
@@ -72,14 +73,17 @@ export const translations = {
       poor: "Rest is recovery. Try dimming your lights 2 hours before bed tonight."
     },
     tips: [
-      "Drink a glass of water right after waking up.",
       "Try 5 minutes of mindful breathing today.",
       "Walking for 10 minutes can boost your mood.",
       "Reduce screen time 1 hour before sleep.",
-      "A clean workspace improves focus."
+      "A clean workspace improves focus.",
+      "Read 10 pages of Quran daily for spiritual growth."
     ],
+    page: 'page',
+    pages: 'pages',
     habitChallenge: '10-Min Challenge',
-    generateHabit: 'Start Challenge',
+    statistics: 'Statistics',
+    statisticsDesc: 'Track your progress and achievements',
     timeRemaining: 'Time Remaining',
     habitFinished: 'Challenge Finished! Well done.',
     gratitudeInput: 'What are you grateful for today?',
@@ -125,13 +129,19 @@ export const translations = {
       notYet: 'Not Yet',
       goingToSleep: 'Got it! Going to sleep now 😴',
       okay: 'Okay, Thanks!',
-      gotIt: 'Got it'
+      gotIt: 'Got it',
+      addPages: 'Add Pages',
+      resetPages: 'Reset Today',
+      updateGoal: 'Update Goal',
+      selectEdition: 'Select Edition',
+      kingFahd: 'King Fahd Printing Press',
+      madinah: 'Madinah Printing Press'
     },
     headers: {
       didYouKnow: 'Did you know?',
       hydrationGoal: 'Hydration Goal',
       drinkSchedule: 'Drink Schedule 🕐',
-      statistics: 'Statistics & Insights',
+      statistics: 'Statistics',
       waterGoalLabel: 'Water Goal',
       sleepScore: 'Sleep Score',
       tasksDone: 'Tasks Done',
@@ -156,7 +166,16 @@ export const translations = {
       notesCollected: 'Notes Collected',
       history: 'History',
       yourWater: 'Your Water Intake',
-      yourSleep: 'Your Sleep Quality'
+      yourSleep: 'Your Sleep Quality',
+      quranReading: 'Quran Reading',
+      pagesRead: 'Pages Read',
+      pagesGoal: 'Daily Pages Goal',
+      quranProgress: 'Your Progress',
+      quranSource: 'Quran Edition',
+      quranStats: 'Quran Statistics',
+      totalPagesRead: 'Total Pages Read',
+      quranStreak: 'Reading Streak',
+      quranAchievements: 'Quran Achievements'
     },
     descriptions: {
       trackHydration: 'Track your daily hydration levels.',
@@ -170,8 +189,10 @@ export const translations = {
       noSleepDataYet: 'No sleep data yet',
       trackProgressTrends: 'Track your progress, achievements, and trends',
       guestDescription: 'Continue as a guest. Your data will be saved locally.',
-      sendSuggestions: 'Send suggestions to the host page.',
-      randomHabits: 'Ready for a quick 10-minute wellness boost? We have 11 different challenges for you!'
+      sendSuggestions: 'Send suggestions to the host.',
+      randomHabits: 'Ready for a quick 10-minute wellness boost? We have 11 different challenges for you!',
+      quranReminder: 'Establish a daily Quran reading routine',
+      quranBenefit: 'Reading Quran daily brings spiritual peace and mindfulness to your day.'
     },
     notifications: {
       timeToRink: 'Time to Drink Water! 💧',
@@ -210,17 +231,23 @@ export const translations = {
       haveAccount: 'Have an account?'
     },
     units: {
-      perDay: '/ DAY'
+      perDay: '/ DAY',
+      mlGoal: 'ml Goal',
+      arrow: '→',
+      checkmark: '✓',
+      xmark: '✗'
     },
     labels: {
       percentComplete: '{percent}% complete',
-      unlocked: 'Unlocked!'
+      unlocked: 'Unlocked!',
+      today: 'Today'
     },
     achievements: {
       categories: {
         streakConsistency: 'Streak & Consistency',
         taskMastery: 'Task Mastery',
-        wellnessWellbeing: 'Wellness & Well-being'
+        wellnessWellbeing: 'Wellness & Well-being',
+        quranMastery: 'Quran Mastery'
       },
       names: {
         dayWarrior7: '7 Day Warrior',
@@ -236,14 +263,56 @@ export const translations = {
         sleepSage: 'Sleep Sage',
         dreamMaster: 'Dream Master',
         wellnessWarrior: 'Wellness Warrior',
-        balancedLife: 'Balanced Life'
+        balancedLife: 'Balanced Life',
+        quranSeeker7: 'Quran Seeker (7 Days)',
+        quranScholar30: 'Quran Scholar (30 Days)',
+        quranMaster100: 'Quran Master (100 Days)',
+        quran500Pages: '500 Pages Reader',
+        quran1000Pages: '1000 Pages Reader',
+        quranConsistency: 'Consistent Reader'
       }
     },
-    loading: 'Loading...'
+    loading: 'Loading...',
+    account: {
+        title: 'Account',
+        name: 'Name',
+        emailPhone: 'Email / Phone',
+        type: 'Account Type',
+        created: 'Created',
+        lastLogin: 'Last Login',
+        totalTime: 'Total Time Spent',
+        guest: 'Guest',
+        registered: 'Registered',
+        close: 'Close',
+        delete: 'Delete Account',
+        loginMessage: 'Please login to view account details.',
+        deleteConfirm: 'Are you sure you want to delete your account? This cannot be undone.',
+        unknown: 'N/A',
+        minutes: 'minutes',
+        exitGuest: 'Exit Guest Mode',
+        logout: 'Logout',
+        logoutConfirm: 'Are you sure you want to logout?',
+        exitGuestConfirm: 'Exit guest mode?'
+    },
+    navigation: {
+        home: 'Home',
+        switch: 'Switch'
+    },
+    common: {
+        surahList: 'Surah List',
+        list: 'List',
+        next: 'Next',
+        previous: 'Previous',
+        retry: 'Retry',
+        page: 'PG',
+        search: 'Search',
+        cancel: 'Cancel',
+        listButton: 'List'
+    }
   },
   ar: {
     title: 'توازن الحياة',
-    dashboard: 'لوحة التحكم',
+    dashboard: 'لوحة التحكم ',
     greetings: {
       morning: 'صباح الخير',
       afternoon: 'طاب يومك',
@@ -256,6 +325,7 @@ export const translations = {
     tasks: 'تذكير المهام',
     microHabits: 'العادات الصغيرة',
     gratitudeJar: 'صندوق الامتنان',
+    quranReminder: 'قراءة ورد من القرآن',
     waterGoal: 'الهدف اليومي',
     ml: 'مل',
     liters: 'لتر',
@@ -315,14 +385,15 @@ export const translations = {
       poor: "الراحة هي التعافي. جرب تعتيم الأضواء قبل النوم بساعتين الليلة."
     },
     tips: [
-      "اشرب كوباً من الماء فور استيقاظك.",
       "جرب 5 دقائق من التنفس الواعي اليوم.",
       "المشي لمدة 10 دقائق يحسن مزاجك.",
       "قلل وقت الشاشة قبل النوم بساعة.",
-      "مساحة العمل النظيفة تحسن التركيز."
+      "مساحة العمل النظيفة تحسن التركيز.",
+      "اقرأ 10 صفحات من القرآن يومياً لتحقيق السلام الروحي."
     ],
     habitChallenge: 'تحدي الـ 10 دقائق',
-    generateHabit: 'ابدأ التحدي',
+    statistics: 'الإحصائيات والرؤى',
+    statisticsDesc: 'تتبع تقدمك والإنجازات',
     timeRemaining: 'الوقت المتبقي',
     habitFinished: 'انتهى التحدي! أحسنت صنعاً.',
     gratitudeInput: 'بماذا تشعر بالامتنان اليوم؟',
@@ -330,6 +401,8 @@ export const translations = {
     closeJar: 'أغلق الصندوق',
     jarEmpty: 'صندوقك فارغ. أضف ملاحظة!',
     recentGratitude: 'آخر امتنان',
+    page: 'صفحة',
+    pages: 'صفحات',
     habits: {
       neck: { title: 'تمارين الرقبة', desc: 'قم بإمالة رأسك ببطء من جانب إلى آخر لتخفيف التوتر.' },
       eyes: { title: 'استرخاءالعين', desc: 'قم بتغطية عينيك براحة يديك لراحة عميقة.' },
@@ -368,7 +441,13 @@ export const translations = {
       notYet: 'ليس بعد',
       goingToSleep: 'حسناً! سأنام الآن 😴',
       okay: 'حسناً، شكراً!',
-      gotIt: 'حسناً'
+      gotIt: 'حسناً',
+      addPages: 'إضافة صفحات',
+      resetPages: 'إعادة ضبط اليوم',
+      updateGoal: 'تحديث الهدف',
+      selectEdition: 'اختر الطبعة',
+      kingFahd: 'مطبعة الملك فهد',
+      madinah: 'مطبعة المدينة'
     },
     headers: {
       didYouKnow: 'هل تعلم؟',
@@ -399,7 +478,16 @@ export const translations = {
       notesCollected: 'الملاحظات المجمعة',
       history: 'السجل',
       yourWater: 'تتبع مياهك',
-      yourSleep: 'جودة نومك'
+      yourSleep: 'جودة نومك',
+      quranReading: 'قراءة القرآن',
+      pagesRead: 'الصفحات المقروءة',
+      pagesGoal: 'هدف الصفحات اليومي',
+      quranProgress: 'تقدمك',
+      quranSource: 'طبعة القرآن',
+      quranStats: 'إحصائيات القرآن',
+      totalPagesRead: 'إجمالي الصفحات المقروءة',
+      quranStreak: 'سلسلة القراءة',
+      quranAchievements: 'إنجازات القرآن'
     },
     descriptions: {
       trackHydration: 'تتبع مستويات الترطيب اليومية.',
@@ -414,7 +502,9 @@ export const translations = {
       trackProgressTrends: 'تتبع تقدمك وإنجازاتك والاتجاهات',
       guestDescription: 'المتابعة كضيف. سيتم حفظ بياناتك محلياً.',
       sendSuggestions: 'أرسل الاقتراحات إلى صفحة المضيف.',
-      randomHabits: 'هل أنت مستعد لتحسين صحتك في 10 دقائق؟ لدينا 11 تحدي مختلف لك!'
+      randomHabits: 'هل أنت مستعد لتحسين صحتك في 10 دقائق؟ لدينا 11 تحدي مختلف لك!',
+      quranReminder: 'تأسيس روتين قراءة القرآن الكريم اليومي',
+      quranBenefit: 'قراءة القرآن يومياً تجلب السلام الروحي واليقظة الذهنية لك.'
     },
     notifications: {
       timeToRink: 'حان وقت شرب الماء! 💧',
@@ -453,17 +543,23 @@ export const translations = {
       haveAccount: 'هل لديك حساب بالفعل؟'
     },
     units: {
-      perDay: '/ يوم'
+      perDay: '/ يوم',
+      mlGoal: 'هدف مل',
+      arrow: '←',
+      checkmark: '✓',
+      xmark: '✗'
     },
     labels: {
       percentComplete: 'اكتمل {percent}%',
-      unlocked: 'تم الفتح!'
+      unlocked: 'تم الفتح!',
+      today: 'اليوم'
     },
     achievements: {
       categories: {
         streakConsistency: 'سلسلة الاستمرارية',
         taskMastery: 'إتقان المهام',
-        wellnessWellbeing: 'الصحة والرفاهية'
+        wellnessWellbeing: 'الصحة والرفاهية',
+        quranMastery: 'إتقان القرآن'
       },
       names: {
         dayWarrior7: 'محارب 7 أيام',
@@ -479,9 +575,51 @@ export const translations = {
         sleepSage: 'حكيم النوم',
         dreamMaster: 'معلم الأحلام',
         wellnessWarrior: 'محارب الصحة',
-        balancedLife: 'حياة متوازنة'
+        balancedLife: 'حياة متوازنة',
+        quranSeeker7: 'طالب القرآن (7 أيام)',
+        quranScholar30: 'عالم القرآن (30 يوم)',
+        quranMaster100: 'إمام القرآن (100 يوم)',
+        quran500Pages: 'قارئ 500 صفحة',
+        quran1000Pages: 'قارئ 1000 صفحة',
+        quranConsistency: 'القارئ المستمر'
       }
     },
-    loading: 'جاري التحميل...'
+    loading: 'جاري التحميل...',
+    account: {
+        title: 'الحساب',
+        name: 'الاسم',
+        emailPhone: 'البريد الإلكتروني / الهاتف',
+        type: 'نوع الحساب',
+        created: 'تاريخ الإنشاء',
+        lastLogin: 'آخر تسجيل دخول',
+        totalTime: 'إجمالي الوقت المقضي',
+        guest: 'ضيف',
+        registered: 'مسجل',
+        close: 'إغلاق',
+        delete: 'حذف الحساب',
+        loginMessage: 'يرجى تسجيل الدخول لعرض تفاصيل الحساب.',
+        deleteConfirm: 'هل أنت متأكد أنك تريد حذف حسابك؟ لا يمكن التراجع عن هذا الإجراء.',
+        unknown: 'غير متوفر',
+        minutes: 'دقيقة',
+        exitGuest: 'إلغاء وضع الضيف',
+        logout: 'تسجيل الخروج',
+        logoutConfirm: 'هل أنت متأكد من تسجيل الخروج؟',
+        exitGuestConfirm: 'هل تريد الخروج من وضع الضيف؟'
+    },
+    navigation: {
+        home: 'الرئيسية',
+        switch: 'تبديل'
+    },
+    common: {
+        surahList: 'فهرس السور',
+        list: 'القائمة',
+        next: 'التالي',
+        previous: 'السابق',
+        retry: 'إعادة المحاولة',
+        page: 'ص',
+        search: 'بحث',
+        cancel: 'إلغاء',
+        listButton: 'القائمة'
+    }
   }
 };

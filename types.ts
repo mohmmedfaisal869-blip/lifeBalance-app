@@ -49,4 +49,10 @@ export interface UserPreferences {
   gratitudeNotes: GratitudeNote[];
   streak: number;
   lastActivityDate: string;
+  quranPagesGoal: number;
+  quranPagesRead: number;
+  lastQuranReset: string;
+  quranEdition: 'kingFahd' | 'madinah';
+  quranTotalPages: number;
+  quranStreakDays: number;
 }

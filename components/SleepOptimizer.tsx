@@ -151,7 +151,7 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
   }, [prefs.sleepHistory]);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 md:pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 className="text-4xl font-black mb-1 tracking-tight text-slate-900 dark:text-white">{t.sleepOptimizer}</h2>
@@ -192,16 +192,52 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
           </div>
           <div className="space-y-6">
             <h3 className="font-black text-xl flex items-center gap-2 text-slate-900 dark:text-white"><TrendingUp size={24} className="text-indigo-500" />{t.weeklyTrend}</h3>
-            <div className="h-32 flex items-end gap-3 px-6 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-6">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-6 relative h-40">
               {weeklyHistory.length === 0 ? (
                 <div className="w-full text-center text-slate-300 text-sm font-bold h-full flex items-center justify-center italic">No data yet</div>
               ) : (
-                weeklyHistory.map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                    <div className={`w-full rounded-t-xl transition-all duration-1000 shadow-lg ${h.score === 3 ? 'bg-indigo-500' : h.score === 2 ? 'bg-indigo-300' : 'bg-rose-400'}`} style={{ height: `${(h.score/3)*100}%` }} />
-                    <span className="text-[10px] font-black opacity-40 text-slate-400">{h.date}</span>
-                  </div>
-                ))
+                <>
+                  <svg className="w-full h-full absolute inset-0" viewBox="0 0 500 200" preserveAspectRatio="none">
+                    {/* Grid lines */}
+                    <line x1="0" y1="50" x2="500" y2="50" stroke="currentColor" strokeWidth="0.5" className="text-slate-300 dark:text-slate-700" opacity="0.3" />
+                    <line x1="0" y1="100" x2="500" y2="100" stroke="currentColor" strokeWidth="0.5" className="text-slate-300 dark:text-slate-700" opacity="0.3" />
+                    <line x1="0" y1="150" x2="500" y2="150" stroke="currentColor" strokeWidth="0.5" className="text-slate-300 dark:text-slate-700" opacity="0.3" />
+                    {/* Trend line */}
+                    <polyline
+                      points={weeklyHistory.map((h, i) => `${(i / (weeklyHistory.length - 1 || 1)) * 500},${180 - (h.score / 3) * 150}`).join(' ')}
+                      fill="none"
+                      stroke="url(#trendGradient)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {/* Gradient */}
+                    <defs>
+                      <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style={{ stopColor: '#6366f1', stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                      </linearGradient>
+                    </defs>
+                    {/* Data points */}
+                    {weeklyHistory.map((h, i) => {
+                      const x = (i / (weeklyHistory.length - 1 || 1)) * 500;
+                      const y = 180 - (h.score / 3) * 150;
+                      return (
+                        <g key={i}>
+                          <circle cx={x} cy={y} r="5" fill={h.score === 3 ? '#10b981' : h.score === 2 ? '#f59e0b' : '#ef4444'} opacity="0.8" />
+                          <circle cx={x} cy={y} r="8" fill="none" stroke={h.score === 3 ? '#10b981' : h.score === 2 ? '#f59e0b' : '#ef4444'} strokeWidth="2" opacity="0.3" />
+                        </g>
+                      );
+                    })}
+                  </svg>
+                  {weeklyHistory.length > 0 && (
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-between text-[10px] font-black text-slate-400 px-6 z-10">
+                      {weeklyHistory.map((h, i) => (
+                        <span key={i}>{h.date}</span>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -226,7 +262,8 @@ const SleepOptimizer: React.FC<SleepOptimizerProps> = ({ prefs, setPrefs }) => {
                     e.stopPropagation();
                     handleSetReminder(bt.time, bt.display);
                   }}
-                  className="p-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm cursor-pointer active:scale-95 flex-shrink-0"
+                  type="button"
+                  className="p-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm cursor-pointer active:scale-95 flex-shrink-0 z-20 relative"
                 >
                   <Bell size={20} />
                 </button>

@@ -123,6 +123,17 @@ const WaterTracker: React.FC<WaterTrackerProps> = ({ prefs, setPrefs }) => {
 
   const requestNotifications = async () => {
     if ('Notification' in window) {
+      // If already allowed, toggle it off
+      if (notificationsAllowed) {
+        setNotificationsAllowed(false);
+        if (reminderInterval) {
+          clearInterval(reminderInterval);
+          setReminderInterval(null);
+        }
+        return;
+      }
+
+      // Otherwise, request permission
       const permission = await Notification.requestPermission();
       setNotificationsAllowed(permission === 'granted');
       
@@ -186,11 +197,11 @@ const WaterTracker: React.FC<WaterTrackerProps> = ({ prefs, setPrefs }) => {
   const percentage = Math.min(100, (prefs.waterIntake / (prefs.waterGoal * 1000)) * 100);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 md:pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{t.waterTracker}</h2>
-          <p className="text-slate-500 font-bold">Track your daily hydration levels.</p>
+          <p className="text-slate-500 font-bold">{t.descriptions.trackHydration}</p>
           <div className="mt-2 flex items-center gap-3">
             {isEditingGoal ? (
               <div className="flex items-center gap-3">
@@ -230,79 +241,81 @@ const WaterTracker: React.FC<WaterTrackerProps> = ({ prefs, setPrefs }) => {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-10 items-start">
+      <div className="grid lg:grid-cols-2 gap-6 md:gap-10 items-start">
         {/* Large Water Intake Display */}
-        <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 rounded-[3rem] p-12 flex flex-col items-center justify-center border border-slate-700 shadow-2xl min-h-[450px]">
-          <div className="relative w-64 h-64 md:w-72 md:h-72 rounded-[3rem] border-[12px] border-slate-700 shadow-inner overflow-hidden bg-slate-900 flex items-center justify-center">
+        <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 flex flex-col items-center justify-center border border-slate-700 shadow-2xl min-h-[280px] md:min-h-[450px]">
+          <div className="relative w-40 h-40 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-[2rem] md:rounded-[3rem] border-[8px] md:border-[12px] border-slate-700 shadow-inner overflow-hidden bg-slate-900 flex items-center justify-center">
             <div className="flex flex-col items-center">
-              <span className="text-8xl font-black tracking-tighter tabular-nums text-white">{prefs.waterIntake}</span>
-              <span className="text-sm font-black uppercase tracking-[0.2em] mt-4 text-slate-400">ML</span>
+              <span className="text-5xl md:text-8xl font-black tracking-tighter tabular-nums text-white">{prefs.waterIntake}</span>
+              <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] mt-2 md:mt-4 text-slate-400">ML</span>
             </div>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 w-full">
+          <div className="mt-6 md:mt-12 flex items-center justify-center gap-4 md:gap-8 w-full">
             <button 
               onClick={() => updateIntake(-250)}
-              className="w-16 h-16 rounded-[1.5rem] bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-90 text-slate-300 hover:text-white"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-[1.5rem] bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-90 text-slate-300 hover:text-white"
             >
-              <Minus size={28} />
+              <Minus size={20} className="md:block hidden" />
+              <Minus size={18} className="md:hidden block" />
             </button>
             
             <div className="flex flex-col items-center">
-              <span className="text-6xl font-black tabular-nums text-blue-400">{percentage.toFixed(0)}%</span>
+              <span className="text-4xl md:text-6xl font-black tabular-nums text-blue-400">{percentage.toFixed(0)}%</span>
             </div>
 
             <button 
               onClick={() => setIsPromptOpen(true)}
-              className="w-16 h-16 rounded-[1.5rem] bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-600/30 active:scale-90 transition-all"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-[1.5rem] bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-600/30 active:scale-90 transition-all"
             >
-              <Plus size={28} />
+              <Plus size={20} className="md:block hidden" />
+              <Plus size={18} className="md:hidden block" />
             </button>
           </div>
         </div>
 
         {/* Right Column */}
         <div className="flex flex-col gap-6">
-          <div className="bg-blue-600 p-10 rounded-[3rem] text-white shadow-2xl shadow-blue-600/20 relative overflow-hidden group min-h-[280px] flex flex-col justify-center">
-            <Droplets className="absolute -bottom-8 -right-8 w-48 h-48 opacity-10 rotate-12 group-hover:scale-125 transition-transform duration-700" />
+          <div className="bg-blue-600 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-white shadow-2xl shadow-blue-600/20 relative overflow-hidden group min-h-[200px] md:min-h-[280px] flex flex-col justify-center">
+            <Droplets className="absolute -bottom-8 -right-8 w-40 h-40 md:w-48 md:h-48 opacity-10 rotate-12 group-hover:scale-125 transition-transform duration-700" />
             <div className="relative z-10">
-              <h3 className="text-3xl font-black mb-6">Did you know?</h3>
-              <p className="text-xl font-bold opacity-90 leading-relaxed">
-                Drinking water can increase your brain power by 14%, helping you focus better and stay sharp.
+              <h3 className="text-xl md:text-3xl font-black mb-4 md:mb-6">{t.headers.didYouKnow}</h3>
+              <p className="text-sm md:text-xl font-bold opacity-90 leading-relaxed">
+                {t.descriptions.waterBrainPower}
               </p>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-10 rounded-[3rem] shadow-xl border border-indigo-700 flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-black text-white">Drink Schedule 🕐</h3>
+          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-xl border border-indigo-700 flex flex-col">
+            <div className="flex items-center justify-between mb-6 md:mb-8 flex-wrap gap-3">
+              <h3 className="text-lg md:text-2xl font-black text-white">{t.headers.drinkSchedule}</h3>
               <button 
                 onClick={enableScheduleNotifications}
-                className={`px-4 py-2 rounded-2xl font-black text-sm transition-all ${scheduleNotificationsEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                className={`px-3 md:px-4 py-2 rounded-2xl font-black text-xs md:text-sm transition-all ${scheduleNotificationsEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
               >
-                {scheduleNotificationsEnabled ? '✅ Active' : 'Enable'}
+                {scheduleNotificationsEnabled ? `✅ ${t.buttons.active}` : t.buttons.enable}
               </button>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3 max-h-[250px] overflow-y-auto">
               {waterSchedule.map((time, index) => {
                 const amountPerSession = Math.round((prefs.waterGoal * 1000) / waterSchedule.length);
                 return (
-                  <div key={index} className="flex items-center gap-3 bg-slate-800 p-4 rounded-2xl">
+                  <div key={index} className="flex items-center gap-2 md:gap-3 bg-slate-800 p-3 md:p-4 rounded-2xl">
                     <input 
                       type="time"
                       value={time}
                       onChange={(e) => handleScheduleChange(index, e.target.value)}
-                      className="flex-1 bg-slate-700 text-white font-black rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 bg-slate-700 text-white font-black rounded-lg px-2 md:px-3 py-2 text-sm md:text-base outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="text-sm font-bold text-slate-300 whitespace-nowrap">{amountPerSession}ml</span>
+                    <span className="text-xs md:text-sm font-bold text-slate-300 whitespace-nowrap">{amountPerSession}ml</span>
                   </div>
                 );
               })}
             </div>
             
-            <p className="text-xs text-slate-400 mt-6 font-bold">
-              You'll receive notifications at each scheduled time to drink {Math.round((prefs.waterGoal * 1000) / waterSchedule.length)}ml of water.
+            <p className="text-xs text-slate-400 mt-4 md:mt-6 font-bold leading-relaxed">
+              💡 You'll receive reminders at each scheduled time to drink {Math.round((prefs.waterGoal * 1000) / waterSchedule.length)}ml of water.
             </p>
           </div>
         </div>
@@ -323,38 +336,38 @@ const WaterTracker: React.FC<WaterTrackerProps> = ({ prefs, setPrefs }) => {
 
       {isPromptOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 p-10 rounded-t-[3.5rem] md:rounded-[4rem] shadow-2xl w-full max-w-xl border-t md:border border-slate-100 dark:border-slate-700">
-            <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full mx-auto mb-10 md:hidden" />
-            <h3 className="text-4xl font-black mb-10 text-center text-slate-900 dark:text-white">{t.howMuchDrink}</h3>
+          <div className="bg-white dark:bg-slate-800 p-6 md:p-10 rounded-t-[3.5rem] md:rounded-[4rem] shadow-2xl w-full max-w-xl border-t md:border border-slate-100 dark:border-slate-700">
+            <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full mx-auto mb-6 md:mb-10 md:hidden" />
+            <h3 className="text-2xl md:text-4xl font-black mb-6 md:mb-10 text-center text-slate-900 dark:text-white">{t.howMuchDrink}</h3>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4 mb-6 md:mb-10">
               {[100, 250, 500, 750].map(amt => (
                 <button 
                   key={amt} 
                   onClick={() => updateIntake(amt)} 
-                  className="py-6 bg-slate-50 dark:bg-slate-900 rounded-[2rem] font-black text-xl hover:bg-blue-600 hover:text-white transition-all text-slate-900 dark:text-white border-2 border-transparent hover:border-blue-500"
+                  className="py-4 md:py-6 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2rem] font-black text-base md:text-xl hover:bg-blue-600 hover:text-white transition-all text-slate-900 dark:text-white border-2 border-transparent hover:border-blue-500"
                 >
                   +{amt}
                 </button>
               ))}
             </div>
             
-            <div className="flex flex-col md:flex-row gap-4 mb-10">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6 md:mb-10">
               <input 
                 type="number"
                 value={customAmount}
                 onChange={e => setCustomAmount(e.target.value)}
-                className="flex-1 bg-slate-50 dark:bg-slate-900 px-8 py-6 rounded-[2rem] outline-none font-black text-3xl text-center md:text-left text-slate-900 dark:text-white border-4 border-transparent focus:border-blue-500 transition-all"
+                className="flex-1 bg-slate-50 dark:bg-slate-900 px-4 md:px-8 py-4 md:py-6 rounded-[1.5rem] md:rounded-[2rem] outline-none font-black text-2xl md:text-3xl text-center text-slate-900 dark:text-white border-4 border-transparent focus:border-blue-500 transition-all"
                 placeholder="0"
               />
               <button 
                 onClick={() => updateIntake(Number(customAmount))} 
-                className="px-12 py-6 bg-blue-600 text-white rounded-[2rem] font-black text-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all"
+                className="px-6 md:px-12 py-4 md:py-6 bg-blue-600 text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-base md:text-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all whitespace-nowrap"
               >
-                Add Custom
+                Add
               </button>
             </div>
-            <button onClick={() => setIsPromptOpen(false)} className="w-full py-4 font-black uppercase text-xs tracking-[0.4em] text-slate-300 hover:text-slate-500 transition-colors">Dismiss</button>
+            <button onClick={() => setIsPromptOpen(false)} className="w-full py-3 md:py-4 font-black uppercase text-xs tracking-[0.4em] text-slate-300 hover:text-slate-500 transition-colors">Dismiss</button>
           </div>
         </div>
       )}

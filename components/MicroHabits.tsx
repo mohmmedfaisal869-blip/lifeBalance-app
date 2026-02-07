@@ -140,7 +140,7 @@ const MicroHabits: React.FC<MicroHabitsProps> = ({ prefs, setPrefs }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 md:pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 className="text-4xl font-black mb-1 tracking-tight text-slate-900 dark:text-white">{t.microHabits}</h2>

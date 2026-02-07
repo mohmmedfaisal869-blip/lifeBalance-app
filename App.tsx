@@ -7,6 +7,7 @@ import KanbanBoard from './components/KanbanBoard.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import MicroHabits from './components/MicroHabits.tsx';
 import GratitudeJar from './components/GratitudeJar.tsx';
+import QuranReminder from './components/QuranReminder.tsx';
 import Statistics from './components/Statistics.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
 import { 
@@ -21,7 +22,8 @@ import {
   Settings,
   ChevronRight,
   BarChart3,
-  User as UserIcon
+  User as UserIcon,
+  Book
 } from 'lucide-react';
 
 const STORAGE_KEY = 'lifebalance_user_data_v4';
@@ -40,7 +42,13 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   archivedTasks: [],
   gratitudeNotes: [],
   streak: 0,
-  lastActivityDate: ''
+  lastActivityDate: '',
+  quranPagesGoal: 5,
+  quranPagesRead: 0,
+  lastQuranReset: new Date().toDateString(),
+  quranEdition: 'kingFahd',
+  quranTotalPages: 0,
+  quranStreakDays: 0
 };
 
 const NewLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
@@ -156,7 +164,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : DEFAULT_PREFERENCES;
   });
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'water' | 'sleep' | 'tasks' | 'habits' | 'gratitude' | 'statistics' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'water' | 'sleep' | 'tasks' | 'habits' | 'gratitude' | 'quran' | 'statistics' | 'settings'>('dashboard');
   
   const t = translations[prefs.language];
   const isRTL = prefs.language === 'ar';
@@ -233,6 +241,7 @@ const App: React.FC = () => {
     { id: 'tasks', label: t.tasks, icon: CheckSquare },
     { id: 'habits', label: t.microHabits, icon: Zap },
     { id: 'gratitude', label: t.gratitudeJar, icon: Heart },
+    { id: 'quran', label: t.quranReminder, icon: Book },
     { id: 'statistics', label: (t as any).headers?.statistics || (t as any).statistics, icon: BarChart3 },
   ];
 
@@ -291,8 +300,21 @@ const App: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className={`relative md:fixed md:inset-0 min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300`}>
-      
+        <div className={`relative md:fixed md:inset-0 min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden`}>
+          
+      {/* Cinematic Ambient Mesh Gradient Background */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+         {/* Base Gradient */}
+         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500" />
+         
+         {/* Animated Mesh Blobs */}
+         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-300/30 dark:bg-indigo-600/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-60 animate-blob" />
+         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-300/30 dark:bg-purple-600/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-60 animate-blob" style={{ animationDelay: '2s' }} />
+         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-300/30 dark:bg-pink-600/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-60 animate-blob" style={{ animationDelay: '4s' }} />
+         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-300/30 dark:bg-blue-600/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-60 animate-blob" style={{ animationDelay: '6s' }} />
+         <div className="absolute top-[20%] left-[20%] w-[60%] h-[60%] bg-rose-200/20 dark:bg-rose-900/10 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-40 animate-blob" style={{ animationDelay: '3s' }} />
+      </div>
+
       {/* Desktop Navigation Rail (Left) */}
       <aside className="hidden md:flex flex-col w-20 lg:w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200/50 dark:border-slate-700/50 h-full z-50">
         <div className="flex items-center gap-3 p-6 h-20">
@@ -306,7 +328,7 @@ const App: React.FC = () => {
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
               className={`
-                flex items-center w-full p-4 rounded-2xl transition-all
+                flex items-center w-full p-4 rounded-2xl transition-all duration-200 active:scale-90 ease-out transform
                 ${activeTab === item.id 
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
                   : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-600 dark:hover:text-slate-200'}
@@ -325,7 +347,7 @@ const App: React.FC = () => {
           <button 
             onClick={() => setActiveTab('settings')}
             className={`
-              flex items-center w-full p-4 rounded-2xl transition-all
+              flex items-center w-full p-4 rounded-2xl transition-all duration-200 active:scale-90 ease-out transform
               ${activeTab === 'settings' 
                 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' 
                 : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}
@@ -338,7 +360,7 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         {/* Mobile Header */}
         <header className="flex md:hidden flex-shrink-0 pt-[env(safe-area-inset-top,1rem)] px-6 pb-2 items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 z-40">
           <div className="flex items-center gap-2 h-14">
@@ -347,7 +369,7 @@ const App: React.FC = () => {
           </div>
           <button 
             onClick={() => setActiveTab('settings')}
-            className={`p-3 rounded-2xl transition-all active:scale-90 ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}
+            className={`p-3 rounded-2xl transition-all duration-200 active:scale-90 ease-out transform ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}
           >
             <Settings size={20} />
           </button>
@@ -363,12 +385,13 @@ const App: React.FC = () => {
               {activeTab === 'tasks' && <KanbanBoard prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'habits' && <MicroHabits prefs={prefs} setPrefs={setPrefs} />}
               {activeTab === 'gratitude' && <GratitudeJar prefs={prefs} setPrefs={setPrefs} />}
-              {activeTab === 'statistics' && <Statistics prefs={prefs} setPrefs={setPrefs} />}
+              {activeTab === 'quran' && <QuranReminder prefs={prefs} setPrefs={setPrefs} />}
+              {activeTab === 'statistics' && <Statistics prefs={prefs} setActiveTab={setActiveTab} />}
               {activeTab === 'settings' && (
                 <div className="space-y-8">
                   <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 max-w-4xl">
                     <h3 className="text-lg font-bold mb-2">{t.headers?.suggestions || 'Suggestions'}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">{t.descriptions?.sendSuggestions || 'Send suggestions to the host page.'}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">{t.descriptions?.sendSuggestions || 'Send suggestions to the host.'}</p>
                     <textarea
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
@@ -462,13 +485,13 @@ const App: React.FC = () => {
               {auth.loggedIn && auth.user ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Name</p>
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.name || 'Name'}</p>
                     <p className="text-lg font-black text-slate-900 dark:text-white">{auth.user.name}</p>
                   </div>
 
                   <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email / Phone</p>
-                    <p className="text-lg font-black text-slate-900 dark:text-white break-all">{auth.user.email || 'N/A'}</p>
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.emailPhone || 'Email / Phone'}</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white break-all">{auth.user.email || t.account?.unknown || 'N/A'}</p>
                   </div>
 
                   {(() => {
@@ -476,28 +499,28 @@ const App: React.FC = () => {
                     return details ? (
                       <>
                         <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Account Type</p>
-                          <p className="text-lg font-black text-slate-900 dark:text-white">{auth.isGuest ? 'Guest' : 'Registered'}</p>
+                          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.type || 'Account Type'}</p>
+                          <p className="text-lg font-black text-slate-900 dark:text-white">{auth.isGuest ? (t.account?.guest || 'Guest') : (t.account?.registered || 'Registered')}</p>
                         </div>
 
                         {details.createdAt && (
                           <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Created</p>
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.created || 'Created'}</p>
                             <p className="text-lg font-black text-slate-900 dark:text-white">{new Date(details.createdAt).toLocaleDateString()}</p>
                           </div>
                         )}
 
                         {details.lastLogin && (
                           <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Last Login</p>
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.lastLogin || 'Last Login'}</p>
                             <p className="text-lg font-black text-slate-900 dark:text-white">{new Date(details.lastLogin).toLocaleDateString()}</p>
                           </div>
                         )}
 
                         {details.totalTimeSpent && (
                           <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl">
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Time Spent</p>
-                            <p className="text-lg font-black text-slate-900 dark:text-white">{Math.round(details.totalTimeSpent / 1000 / 60)} minutes</p>
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t.account?.totalTime || 'Total Time Spent'}</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{Math.round(details.totalTimeSpent / 1000 / 60)} {t.account?.minutes || 'minutes'}</p>
                           </div>
                         )}
 
@@ -506,11 +529,11 @@ const App: React.FC = () => {
                             onClick={() => setShowAccountPanel(false)}
                             className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-black transition hover:bg-slate-200 dark:hover:bg-slate-600"
                           >
-                            Close
+                            {t.account?.close || 'Close'}
                           </button>
                           <button 
                             onClick={() => {
-                              if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+                              if (confirm(t.account?.deleteConfirm || 'Are you sure you want to delete your account? This cannot be undone.')) {
                                 const users = readUsers();
                                 if (auth.user?.email) {
                                   delete users[auth.user.email.toLowerCase()];
@@ -522,7 +545,7 @@ const App: React.FC = () => {
                             }}
                             className="flex-1 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-black transition hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800"
                           >
-                            Delete Account
+                            {t.account?.delete || 'Delete Account'}
                           </button>
                         </div>
                       </>
@@ -534,18 +557,18 @@ const App: React.FC = () => {
                       onClick={() => setShowAccountPanel(false)}
                       className="w-full mt-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-black transition hover:bg-slate-200 dark:hover:bg-slate-600"
                     >
-                      Close
+                      {t.account?.close || 'Close'}
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-slate-600 dark:text-slate-400 font-bold mb-4">Please login to view account details.</p>
+                  <p className="text-slate-600 dark:text-slate-400 font-bold mb-4">{t.account?.loginMessage || 'Please login to view account details.'}</p>
                   <button 
                     onClick={() => setShowAccountPanel(false)}
                     className="w-full py-3 bg-blue-600 text-white rounded-2xl font-black transition hover:bg-blue-700"
                   >
-                    Close
+                    {t.account?.close || 'Close'}
                   </button>
                 </div>
               )}
@@ -553,31 +576,39 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-800/50 fixed bottom-0 left-0 right-0 z-50 h-[calc(5rem+env(safe-area-inset-bottom,0px))]">
-          <div className="flex items-center justify-around h-20 px-2">
-            {menuItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`
-                  flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all active:scale-75
-                  ${activeTab === item.id ? 'text-blue-600 dark:text-blue-400 scale-110 font-bold' : 'text-slate-400 font-medium'}
-                `}
-              >
-                <div className="relative">
-                  <item.icon size={26} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-                  {activeTab === item.id && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full shadow-[0_0_8px_rgba(37,99,235,1)] animate-pulse" />
-                  )}
-                </div>
-                <span className="text-[10px] mt-1 uppercase tracking-tighter truncate max-w-full px-1">
-                  {item.id === 'dashboard' 
-                    ? (prefs.language === 'ar' ? 'الرئيسية' : 'Home') 
-                    : (((item.label as string) || '').split(' ')[0] || (item.label as string) || '')}
-                </span>
-              </button>
-            ))}
+        {/* Mobile Floating Glass Dock */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 safe-area-pb">
+          <div className="flex items-center justify-around px-1 h-16 overflow-x-auto no-scrollbar">
+            {menuItems.map(item => {
+              const isActive = activeTab === item.id;
+              // Short labels for mobile
+              const shortLabel = item.id === 'dashboard' ? 'Home' 
+                : item.id === 'water' ? 'Water'
+                : item.id === 'sleep' ? 'Sleep'
+                : item.id === 'tasks' ? 'Tasks'
+                : item.id === 'habits' ? 'Habits'
+                : item.id === 'gratitude' ? 'Thanks'
+                : item.id === 'quran' ? 'Quran'
+                : item.id === 'statistics' ? 'Stats'
+                : (item.label as string)?.split(' ')[0];
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={`
+                    flex flex-col items-center justify-center gap-0.5 py-2 px-1.5 min-w-[48px] rounded-lg transition-all duration-200
+                    ${isActive 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-slate-400 dark:text-slate-500 active:text-slate-600'}
+                  `}
+                >
+                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={`text-[9px] font-bold leading-tight ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                    {shortLabel}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </nav>
         </div>

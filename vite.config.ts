@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3002,
         host: '0.0.0.0',
+        proxy: {
+          '/quran': {
+            target: 'https://api.alquran.cloud',
+            changeOrigin: true,
+            secure: false, 
+            rewrite: (path) => path.replace(/^\/quran/, '')
+          }
+        }
       },
       plugins: [react()],
       define: {

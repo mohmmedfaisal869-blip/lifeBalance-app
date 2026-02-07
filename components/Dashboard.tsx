@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { UserPreferences, TaskStatus } from '../types';
 import { translations } from '../i18n';
-import { Droplets, Moon, CheckCircle2, ArrowUpRight, Flame, Heart, Sparkles, Zap } from 'lucide-react';
+import { Droplets, Moon, CheckCircle2, ArrowUpRight, Flame, Heart, Sparkles, Zap, BarChart3, Book } from 'lucide-react';
 
 const NewLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={`${className} drop-shadow-md flex-shrink-0`} overflow="visible">
@@ -83,45 +83,52 @@ const Dashboard: React.FC<DashboardProps> = ({ prefs, setPrefs, setActiveTab, us
       icon: CheckCircle2,
       color: 'bg-emerald-500',
       tab: 'tasks'
+    },
+    {
+      id: 'quran',
+      title: t.quranReminder,
+      value: `${prefs.quranPagesRead || 0} / ${prefs.quranPagesGoal || 5}`,
+      subtitle: t.headers.pagesRead,
+      progress: Math.min(100, ((prefs.quranPagesRead || 0) / Math.max(1, prefs.quranPagesGoal || 5)) * 100),
+      icon: Book,
+      color: 'bg-amber-600',
+      tab: 'quran'
     }
   ];
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-12">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="w-full lg:w-auto flex items-center gap-5 md:gap-8 flex-col md:flex-row text-center md:text-left">
-          <NewLogo className="hidden md:block w-16 h-16 md:w-24 md:h-24" />
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black mb-1 tracking-tight text-slate-900 dark:text-white">
-              {greeting}, <span className="text-blue-600 dark:text-blue-500">{user?.name || 'User'}</span>
-            </h2>
-            <p className="text-slate-500 text-base md:text-lg font-bold opacity-80">
-              {new Date().toLocaleDateString(prefs.language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
+    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-500 pb-24 md:pb-12">
+      <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-4 md:gap-8">
+        <div className="w-full md:w-auto flex flex-col items-center md:items-start text-center md:text-left">
+          <h2 className="text-3xl md:text-5xl font-black mb-1 tracking-tight text-slate-900 dark:text-white">
+            {greeting}, <span className="text-blue-600 dark:text-blue-500">{user?.name || 'User'}</span>
+          </h2>
+          <p className="text-slate-500 text-sm md:text-lg font-bold opacity-80">
+            {new Date().toLocaleDateString(prefs.language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
         </div>
 
-        <div className="order-first md:order-none w-full lg:w-80 flex items-center justify-between lg:justify-end gap-6 bg-gradient-to-br from-orange-500 to-red-600 p-6 md:p-8 rounded-[2rem] text-white shadow-2xl shadow-orange-500/20 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+        <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-4 bg-gradient-to-br from-orange-500 to-red-600 p-4 md:p-8 rounded-[2rem] md:rounded-[3rem] text-white shadow-2xl shadow-orange-500/20 relative overflow-hidden group hover:scale-[1.02] transition-transform">
           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-center gap-5 relative z-10">
-            <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-md">
-              <Flame size={48} className="animate-pulse fill-white" />
+          <div className="flex items-center gap-3 md:gap-5 relative z-10">
+            <div className="bg-white/20 p-3 md:p-5 rounded-[2rem] backdrop-blur-md">
+              <Flame size={32} className="md:w-12 md:h-12 animate-pulse fill-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-5xl font-black leading-none tabular-nums">{prefs.streak}</span>
-              <span className="text-sm uppercase font-black tracking-widest opacity-80">{t.days} {t.streak}</span>
+              <span className="text-4xl md:text-5xl font-black leading-none tabular-nums">{prefs.streak}</span>
+              <span className="text-xs md:text-sm uppercase font-black tracking-widest opacity-80">{t.days} {t.streak}</span>
             </div>
           </div>
-          <Sparkles className="absolute top-4 right-4 text-white/40" size={24} />
+          <Sparkles className="absolute top-2 right-2 md:top-4 md:right-4 text-white/40" size={18} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {cards.map(card => (
           <button
             key={card.id}
             onClick={() => setActiveTab(card.tab)}
-            className="group relative bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-700/50 hover:-translate-y-2 transition-all text-left overflow-hidden"
+            className="group relative bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-700/50 hover:shadow-2xl hover:scale-[1.02] active:scale-90 transition-all duration-300 ease-out text-left overflow-hidden transform"
           >
             <div className={`absolute top-0 ${prefs.language === 'ar' ? 'left-0' : 'right-0'} w-40 h-40 ${card.color} opacity-[0.03] rounded-bl-[4rem] group-hover:scale-150 transition-transform duration-700`} />
             
@@ -148,80 +155,97 @@ const Dashboard: React.FC<DashboardProps> = ({ prefs, setPrefs, setActiveTab, us
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-[3rem] p-10 flex flex-col md:flex-row items-center gap-10 shadow-xl border border-slate-100 dark:border-slate-700 relative overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-8">
+        <div className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 flex flex-col items-center md:items-start gap-6 shadow-xl border border-slate-100 dark:border-slate-700 relative overflow-hidden">
           <div className="absolute -top-12 -right-12 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
-          <div className="bg-emerald-100 dark:bg-emerald-900/30 p-10 rounded-[3rem] text-emerald-600 dark:text-emerald-400 shadow-inner">
-             <Heart size={72} className="animate-bounce" />
+          <div className="bg-emerald-100 dark:bg-emerald-900/30 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-emerald-600 dark:text-emerald-400 shadow-inner">
+             <Heart size={48} className="md:w-18 md:h-18 animate-bounce" />
           </div>
-          <div className="flex-1 text-center md:text-left space-y-4">
-            <div className="flex items-center justify-center md:justify-start gap-3">
+          <div className="flex-1 text-center md:text-left space-y-3 md:space-y-4">
+            <div className="flex items-center justify-center md:justify-start gap-2 md:gap-3">
               <h4 className="text-emerald-500 uppercase font-black tracking-[0.2em] text-xs">{t.dailyTip}</h4>
-              <Sparkles size={18} className="text-emerald-400" />
+              <Sparkles size={16} className="text-emerald-400 md:w-5 md:h-5" />
             </div>
-            <p className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white">{dailyTip}</p>
+            <p className="text-2xl md:text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white">{dailyTip}</p>
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
           <button 
             onClick={() => setActiveTab('habits')}
-            className="group flex items-center justify-between p-10 bg-blue-600 rounded-[3rem] text-white shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-transform text-left"
+            className="group flex items-center justify-between p-6 md:p-10 bg-blue-600 rounded-[2rem] md:rounded-[3rem] text-white shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 ease-out text-left transform"
           >
-            <div className="flex items-center gap-6">
-              <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-md">
-                <Zap size={40} />
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="bg-white/20 p-3 md:p-5 rounded-[1.5rem] backdrop-blur-md">
+                <Zap size={28} className="md:w-10 md:h-10" />
               </div>
               <div>
-                <h4 className="font-black text-2xl leading-none mb-2">{t.microHabits}</h4>
-                <p className="opacity-80 font-bold text-base">{t.habitChallenge}</p>
+                <h4 className="font-black text-lg md:text-2xl leading-none mb-1 md:mb-2">{t.microHabits}</h4>
+                <p className="opacity-80 font-bold text-xs md:text-base">{t.habitChallenge}</p>
               </div>
             </div>
-            <ArrowUpRight className="opacity-40 group-hover:opacity-100 transition-opacity" size={28} />
+            <ArrowUpRight className="opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0" size={24} />
           </button>
 
           <button 
             onClick={() => setActiveTab('gratitude')}
-            className="group p-10 bg-rose-500 rounded-[3rem] text-white shadow-2xl shadow-rose-500/20 hover:scale-[1.02] transition-transform text-left relative overflow-hidden"
+            className="group p-6 md:p-10 bg-rose-500 rounded-[2rem] md:rounded-[3rem] text-white shadow-2xl shadow-rose-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 ease-out text-left relative overflow-hidden transform"
           >
-            <div className="flex items-center gap-6 mb-6">
-              <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-md">
-                <Heart size={40} />
+            <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6">
+              <div className="bg-white/20 p-3 md:p-5 rounded-[1.5rem] backdrop-blur-md">
+                <Heart size={28} className="md:w-10 md:h-10" />
               </div>
-              <h4 className="font-black text-2xl leading-none">{t.gratitudeJar}</h4>
+              <h4 className="font-black text-lg md:text-2xl leading-none">{t.gratitudeJar}</h4>
             </div>
             {latestGratitude ? (
-              <div className="bg-white/10 p-6 rounded-[2rem] backdrop-blur-md border border-white/10">
-                <p className="text-xs uppercase font-black tracking-widest mb-2 opacity-60">{t.recentGratitude}</p>
-                <p className="font-bold text-xl line-clamp-1 italic">"{latestGratitude.text}"</p>
+              <div className="bg-white/10 p-4 md:p-6 rounded-[1.5rem] backdrop-blur-md border border-white/10">
+                <p className="text-xs uppercase font-black tracking-widest mb-1 md:mb-2 opacity-60">{t.recentGratitude}</p>
+                <p className="font-bold text-sm md:text-xl line-clamp-2 italic">"{latestGratitude.text}"</p>
               </div>
             ) : (
-              <p className="font-bold opacity-80 text-lg">{t.jarEmpty}</p>
+              <p className="font-bold opacity-80 text-base md:text-lg">{t.jarEmpty}</p>
             )}
-            <Sparkles className="absolute bottom-6 right-6 opacity-20" size={32} />
+            <Sparkles className="absolute bottom-4 right-4 md:bottom-6 md:right-6 opacity-20 md:w-8 md:h-8" size={24} />
           </button>
         </div>
       </div>
 
+      {/* Statistics Button */}
+      <button
+        onClick={() => setActiveTab('statistics')}
+        className="w-full group flex items-center justify-between p-6 md:p-10 bg-gradient-to-r from-slate-700 to-slate-800 rounded-[2rem] md:rounded-[3rem] text-white shadow-2xl shadow-slate-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 ease-out text-left transform"
+      >
+        <div className="flex items-center gap-4 md:gap-6">
+          <div className="bg-white/20 p-3 md:p-5 rounded-[1.5rem] backdrop-blur-md">
+            <BarChart3 size={28} className="md:w-10 md:h-10" />
+          </div>
+          <div>
+            <h4 className="font-black text-lg md:text-2xl leading-none mb-1 md:mb-2">{t.statistics}</h4>
+            <p className="opacity-80 font-bold text-xs md:text-base">{t.statisticsDesc}</p>
+          </div>
+        </div>
+        <ArrowUpRight className="opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0" size={24} />
+      </button>
+
       {/* Mobile quick actions */}
       <div className="md:hidden mt-6 flex items-center gap-3 overflow-x-auto py-2">
-        <button onClick={() => setActiveTab('water')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2">
+        <button onClick={() => setActiveTab('water')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2 transition-all duration-200 active:scale-90">
           <Droplets size={20} />
           <span className="text-xs font-black">Water</span>
         </button>
-        <button onClick={() => setActiveTab('sleep')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2">
+        <button onClick={() => setActiveTab('sleep')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2 transition-all duration-200 active:scale-90">
           <Moon size={20} />
           <span className="text-xs font-black">Sleep</span>
         </button>
-        <button onClick={() => setActiveTab('tasks')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2">
+        <button onClick={() => setActiveTab('tasks')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2 transition-all duration-200 active:scale-90">
           <CheckCircle2 size={20} />
           <span className="text-xs font-black">Tasks</span>
         </button>
-        <button onClick={() => setActiveTab('habits')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2">
+        <button onClick={() => setActiveTab('habits')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2 transition-all duration-200 active:scale-90">
           <Zap size={20} />
           <span className="text-xs font-black">Habits</span>
         </button>
-        <button onClick={() => setActiveTab('gratitude')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2">
+        <button onClick={() => setActiveTab('gratitude')} className="min-w-[110px] flex-shrink-0 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex flex-col items-center gap-2 transition-all duration-200 active:scale-90">
           <Heart size={20} />
           <span className="text-xs font-black">Gratitude</span>
         </button>

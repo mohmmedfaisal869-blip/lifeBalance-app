@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { UserPreferences, TaskStatus, SleepHistoryEntry } from '../types';
 import { translations } from '../i18n';
-import { TrendingUp, Droplets, Moon, CheckCircle2, Heart, Calendar, Download, Award, Flame, Target, Zap } from 'lucide-react';
+import { TrendingUp, Droplets, Moon, CheckCircle2, Heart, Calendar, Download, Award, Flame, Target, Zap, Book } from 'lucide-react';
 
 interface StatisticsProps {
   prefs: UserPreferences;
@@ -120,6 +120,22 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
       else achieved.push({ id: 'habits_20', name: t.achievements.names.wellnessWarrior, icon: Zap, unlocked: false, progress: (completedHabits / 20) * 100, rank: 'Medium' });
     }
     
+    // Quran achievements
+    if (prefs.quranStreakDays >= 7) achieved.push({ id: 'quran_7', name: t.achievements.names.quranSeeker7, icon: Book, unlocked: true, rank: 'Easy' });
+    else achieved.push({ id: 'quran_7', name: t.achievements.names.quranSeeker7, icon: Book, unlocked: false, progress: ((prefs.quranStreakDays || 0) / 7) * 100, rank: 'Easy' });
+    
+    if (prefs.quranStreakDays >= 30) achieved.push({ id: 'quran_30', name: t.achievements.names.quranScholar30, icon: Book, unlocked: true, rank: 'Medium' });
+    else achieved.push({ id: 'quran_30', name: t.achievements.names.quranScholar30, icon: Book, unlocked: false, progress: ((prefs.quranStreakDays || 0) / 30) * 100, rank: 'Medium' });
+    
+    if (prefs.quranStreakDays >= 100) achieved.push({ id: 'quran_100', name: t.achievements.names.quranMaster100, icon: Book, unlocked: true, rank: 'Hard' });
+    else achieved.push({ id: 'quran_100', name: t.achievements.names.quranMaster100, icon: Book, unlocked: false, progress: ((prefs.quranStreakDays || 0) / 100) * 100, rank: 'Hard' });
+    
+    if ((prefs.quranTotalPages || 0) >= 500) achieved.push({ id: 'quran_500', name: t.achievements.names.quran500Pages, icon: Book, unlocked: true, rank: 'Medium' });
+    else achieved.push({ id: 'quran_500', name: t.achievements.names.quran500Pages, icon: Book, unlocked: false, progress: ((prefs.quranTotalPages || 0) / 500) * 100, rank: 'Medium' });
+    
+    if ((prefs.quranTotalPages || 0) >= 1000) achieved.push({ id: 'quran_1000', name: t.achievements.names.quran1000Pages, icon: Book, unlocked: true, rank: 'Hard' });
+    else achieved.push({ id: 'quran_1000', name: t.achievements.names.quran1000Pages, icon: Book, unlocked: false, progress: ((prefs.quranTotalPages || 0) / 1000) * 100, rank: 'Hard' });
+    
     // All-rounder achievement (balanced tracking)
     const metricsTracked = (
       (prefs.waterIntake > 0 ? 1 : 0) +
@@ -186,18 +202,19 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 md:pb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
         <div>
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-            <TrendingUp className="text-blue-500" size={40} />
+          <h2 className="text-2xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2 md:gap-3">
+            <TrendingUp className="text-blue-500 md:block hidden" size={28} />
+            <TrendingUp className="text-blue-500 md:hidden block" size={24} />
             {t.headers.statistics}
           </h2>
-          <p className="text-slate-500 font-bold mt-2">{t.descriptions.trackProgress}</p>
+          <p className="text-xs md:text-base text-slate-500 font-bold mt-2">{t.descriptions.trackProgress}</p>
         </div>
         <button
           onClick={exportData}
-          className="flex items-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all"
+          className="flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm md:text-base shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all whitespace-nowrap"
         >
           <Download size={20} />
           {t.buttons.exportData}
@@ -236,11 +253,23 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
           <div className="text-xs font-black uppercase tracking-widest opacity-80 mt-1">{t.headers.tasksDone}</div>
         </button>
 
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 p-6 rounded-3xl text-white shadow-xl">
+        <button
+          onClick={() => setActiveTab('gratitude')}
+          className="bg-gradient-to-br from-rose-500 to-rose-600 p-6 rounded-3xl text-white shadow-xl hover:scale-105 transition-transform"
+        >
           <Heart size={32} className="mb-3" />
           <div className="text-3xl font-black tabular-nums">{prefs.gratitudeNotes.length}</div>
           <div className="text-xs font-black uppercase tracking-widest opacity-80 mt-1">{t.headers.gratitudeNotes}</div>
-        </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('quran')}
+          className="bg-gradient-to-br from-amber-600 to-amber-700 p-6 rounded-3xl text-white shadow-xl hover:scale-105 transition-transform"
+        >
+          <Book size={32} className="mb-3" />
+          <div className="text-3xl font-black tabular-nums">{Math.min(100, ((prefs.quranPagesRead || 0) / Math.max(1, prefs.quranPagesGoal || 5)) * 100).toFixed(0)}%</div>
+          <div className="text-xs font-black uppercase tracking-widest opacity-80 mt-1">{t.headers.quranReading}</div>
+        </button>
       </div>
 
       {/* Detailed Stats */}
@@ -256,7 +285,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
               onClick={() => setActiveTab('water')}
               className="text-xs font-black uppercase tracking-widest text-blue-500 hover:text-blue-600"
             >
-              {t.headers.viewDetails} →
+              {t.headers.viewDetails} {t.units.arrow}
             </button>
           </div>
           
@@ -281,7 +310,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
               </div>
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
                 <span className="text-xs font-black text-slate-600 dark:text-slate-300">
-                  {prefs.waterGoal * 1000}ml Goal
+                  {prefs.waterGoal * 1000}{t.units.mlGoal}
                 </span>
               </div>
             </div>
@@ -297,7 +326,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
               <div>
                 <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{t.headers.goalMetToday}</div>
                 <div className={`text-2xl font-black ${weeklyWaterStats.completion >= 100 ? 'text-emerald-500' : 'text-slate-400'}`}>
-                  {weeklyWaterStats.completion >= 100 ? `✓ ${t.buttons.yes}` : `✗ ${t.buttons.notYet}`}
+                  {weeklyWaterStats.completion >= 100 ? `${t.units.checkmark} ${t.buttons.yes}` : `${t.units.xmark} ${t.buttons.notYet}`}
                 </div>
               </div>
             </div>
@@ -315,7 +344,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
               onClick={() => setActiveTab('sleep')}
               className="text-xs font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-600"
             >
-              {t.headers.viewDetails} →
+              {t.headers.viewDetails} {t.units.arrow}
             </button>
           </div>
           
@@ -373,7 +402,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
                 onClick={() => setActiveTab('sleep')}
                 className="mt-4 px-6 py-2 bg-indigo-500 text-white rounded-xl font-black text-sm"
               >
-                {t.buttons.startTracking} →
+                {t.buttons.startTracking} {t.units.arrow}
               </button>
             </div>
           )}
@@ -390,7 +419,7 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
               onClick={() => setActiveTab('tasks')}
               className="text-xs font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-600"
             >
-              {t.headers.viewBoard} →
+              {t.headers.viewBoard} {t.units.arrow}
             </button>
           </div>
           
@@ -628,6 +657,68 @@ const Statistics: React.FC<StatisticsProps> = ({ prefs, setActiveTab }) => {
                         <div className="mt-1 sm:mt-2">
                           <div className="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
                             <div className="bg-gradient-to-r from-rose-400 to-rose-500 h-full transition-all" style={{ width: `${Math.min(100, achievement.progress)}%` }} />
+                          </div>
+                          <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-black mt-0.5 sm:mt-1 block">{achievement.progress.toFixed(0)}%</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quran Mastery */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6">
+              <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                <Book size={16} className="text-amber-600" />
+                {t.achievements.categories.quranMastery}
+              </h4>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                {achievements.filter(a => a.id.includes('quran')).map(achievement => {
+                  const Icon = achievement.icon;
+                  const rankColors = {
+                    Easy: 'bg-green-500/10 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300',
+                    Medium: 'bg-orange-500/10 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300',
+                    Hard: 'bg-red-500/10 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300'
+                  };
+                  const rankBadge = {
+                    Easy: 'bg-green-500 text-white',
+                    Medium: 'bg-orange-500 text-white',
+                    Hard: 'bg-red-500 text-white'
+                  };
+                  return (
+                    <div
+                      key={achievement.id}
+                      className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 transition-all ${
+                        achievement.unlocked
+                          ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700 shadow-md'
+                          : rankColors[achievement.rank]
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className={`p-1 sm:p-1.5 rounded-lg ${
+                          achievement.unlocked
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                        }`}>
+                          <Icon size={14} />
+                        </div>
+                        <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider ${rankBadge[achievement.rank]}`}>
+                          {achievement.rank.charAt(0)}
+                        </span>
+                      </div>
+                      <p className={`text-[11px] sm:text-xs font-black leading-tight ${
+                        achievement.unlocked
+                          ? 'text-amber-900 dark:text-amber-100'
+                          : 'text-slate-600 dark:text-slate-400'
+                      }`}>
+                        {achievement.name}
+                      </p>
+                      {achievement.unlocked && <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-black mt-0.5 sm:mt-1 block">✓ {t.labels.unlocked}</span>}
+                      {!achievement.unlocked && achievement.progress !== undefined && (
+                        <div className="mt-1 sm:mt-2">
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
+                            <div className="bg-gradient-to-r from-amber-400 to-amber-500 h-full transition-all" style={{ width: `${Math.min(100, achievement.progress)}%` }} />
                           </div>
                           <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-black mt-0.5 sm:mt-1 block">{achievement.progress.toFixed(0)}%</span>
                         </div>
