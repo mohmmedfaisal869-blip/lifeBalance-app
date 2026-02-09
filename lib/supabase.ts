@@ -92,6 +92,37 @@ export async function getAllUsersFromSupabase(): Promise<UserData[]> {
   }
 }
 
+// Save a suggestion to Supabase
+export async function saveSuggestionToSupabase(suggestion: {
+  user_email: string | null;
+  user_name: string | null;
+  text: string;
+}): Promise<void> {
+  try {
+    await supabaseRequest('suggestions', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...suggestion,
+        created_at: new Date().toISOString(),
+      }),
+    });
+    console.log('Suggestion saved to Supabase');
+  } catch (error) {
+    console.error('Failed to save suggestion to Supabase:', error);
+  }
+}
+
+// Get all suggestions (for host page)
+export async function getAllSuggestionsFromSupabase(): Promise<any[]> {
+  try {
+    const suggestions = await supabaseRequest('suggestions?select=*&order=created_at.desc');
+    return suggestions || [];
+  } catch (error) {
+    console.error('Failed to fetch suggestions from Supabase:', error);
+    return [];
+  }
+}
+
 // Export config for host page
 export const SUPABASE_CONFIG = {
   url: SUPABASE_URL,

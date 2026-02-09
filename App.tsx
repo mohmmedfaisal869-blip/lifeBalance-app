@@ -10,7 +10,7 @@ import GratitudeJar from './components/GratitudeJar.tsx';
 import QuranReminder from './components/QuranReminder.tsx';
 import Statistics from './components/Statistics.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
-import { syncUserToSupabase } from './lib/supabase.ts';
+import { syncUserToSupabase, saveSuggestionToSupabase } from './lib/supabase.ts';
 import { 
   LayoutDashboard, 
   Droplets, 
@@ -301,10 +301,11 @@ const App: React.FC = () => {
 
   const [suggestionText, setSuggestionText] = useState('');
 
-  const submitSuggestion = () => {
+  const submitSuggestion = async () => {
     const text = suggestionText.trim();
     if (!text) return alert('Please enter a suggestion.');
     try {
+      // Save to localStorage (backup)
       const raw = localStorage.getItem('lifebalance_suggestions') || '[]';
       const arr = JSON.parse(raw);
       const entry = {
@@ -315,6 +316,14 @@ const App: React.FC = () => {
       };
       arr.unshift(entry);
       localStorage.setItem('lifebalance_suggestions', JSON.stringify(arr));
+      
+      // Save to Supabase (cloud)
+      await saveSuggestionToSupabase({
+        user_email: auth?.user?.email || null,
+        user_name: auth?.user?.name || null,
+        text: text,
+      });
+      
       setSuggestionText('');
       alert('Thank you — your suggestion was submitted.');
     } catch (e) { alert('Failed to submit suggestion.'); }
