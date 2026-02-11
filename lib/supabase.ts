@@ -92,17 +92,18 @@ export async function getAllUsersFromSupabase(): Promise<UserData[]> {
   }
 }
 
-// Check if a user is blocked or deleted
+// Check if a user is blocked
 export async function checkUserStatus(userId: string): Promise<{ exists: boolean; blocked: boolean }> {
   try {
     const users = await supabaseRequest(`users?id=eq.${encodeURIComponent(userId)}&select=id,is_blocked`);
     if (!users || users.length === 0) {
-      return { exists: false, blocked: false }; // User deleted
+      // User doesn't exist in Supabase - could be new user, don't block them
+      return { exists: false, blocked: false };
     }
     return { exists: true, blocked: users[0].is_blocked || false };
   } catch (error) {
     console.error('Failed to check user status:', error);
-    return { exists: true, blocked: false }; // Default to allowing if check fails
+    return { exists: false, blocked: false }; // Default to allowing if check fails
   }
 }
 

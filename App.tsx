@@ -87,23 +87,21 @@ const App: React.FC = () => {
 
   // Blocked user state
   const [isBlocked, setIsBlocked] = useState(false);
-  const [isDeleted, setIsDeleted] = useState(false);
 
-  // Check if user is blocked or deleted
+  // Check if user is blocked
   useEffect(() => {
     const checkStatus = async () => {
       if (auth.loggedIn && auth.user?.email) {
         const status = await checkUserStatus(auth.user.email);
-        if (!status.exists) {
-          setIsDeleted(true);
-          setIsBlocked(false);
-        } else if (status.blocked) {
+        // Only block if user EXISTS in Supabase AND is marked as blocked
+        // New users won't exist yet, so don't block them
+        if (status.exists && status.blocked) {
           setIsBlocked(true);
-          setIsDeleted(false);
         } else {
           setIsBlocked(false);
-          setIsDeleted(false);
         }
+      } else {
+        setIsBlocked(false);
       }
     };
     
@@ -113,12 +111,11 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [auth.loggedIn, auth.user?.email]);
 
-  // Handle blocked/deleted user - force logout
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('lifebalance_auth');
     setAuth({ loggedIn: false });
     setIsBlocked(false);
-    setIsDeleted(false);
   };
 
   useEffect(() => {
@@ -385,29 +382,6 @@ const App: React.FC = () => {
               className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
             >
               {prefs.language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Deleted User Screen */}
-      {auth.loggedIn && isDeleted && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-50">
-          <div className="text-center p-8 max-w-md">
-            <div className="text-6xl mb-4">🗑️</div>
-            <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300 mb-4">
-              {prefs.language === 'ar' ? 'تم حذف حسابك' : 'Account Deleted'}
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {prefs.language === 'ar' 
-                ? 'تم حذف حسابك. يمكنك إنشاء حساب جديد.'
-                : 'Your account has been deleted. You can create a new account.'}
-            </p>
-            <button 
-              onClick={handleLogout}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-            >
-              {prefs.language === 'ar' ? 'إنشاء حساب جديد' : 'Create New Account'}
             </button>
           </div>
         </div>
