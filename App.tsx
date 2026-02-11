@@ -10,7 +10,7 @@ import GratitudeJar from './components/GratitudeJar.tsx';
 import QuranReminder from './components/QuranReminder.tsx';
 import Statistics from './components/Statistics.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
-import { syncUserToSupabase, saveSuggestionToSupabase } from './lib/supabase.ts';
+import { syncUserToSupabase, saveSuggestionToSupabase, checkUserStatus } from './lib/supabase.ts';
 import { 
   LayoutDashboard, 
   Droplets, 
@@ -84,6 +84,42 @@ const App: React.FC = () => {
       return { loggedIn: false };
     }
   });
+
+  // Blocked user state
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+
+  // Check if user is blocked or deleted
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (auth.loggedIn && auth.user?.email) {
+        const status = await checkUserStatus(auth.user.email);
+        if (!status.exists) {
+          setIsDeleted(true);
+          setIsBlocked(false);
+        } else if (status.blocked) {
+          setIsBlocked(true);
+          setIsDeleted(false);
+        } else {
+          setIsBlocked(false);
+          setIsDeleted(false);
+        }
+      }
+    };
+    
+    checkStatus();
+    // Check every 30 seconds
+    const interval = setInterval(checkStatus, 30000);
+    return () => clearInterval(interval);
+  }, [auth.loggedIn, auth.user?.email]);
+
+  // Handle blocked/deleted user - force logout
+  const handleLogout = () => {
+    localStorage.removeItem('lifebalance_auth');
+    setAuth({ loggedIn: false });
+    setIsBlocked(false);
+    setIsDeleted(false);
+  };
 
   useEffect(() => {
     try { localStorage.setItem('lifebalance_auth', JSON.stringify(auth)); } catch {}
@@ -331,6 +367,52 @@ const App: React.FC = () => {
 
   return (
     <>
+      {/* Blocked User Screen */}
+      {auth.loggedIn && isBlocked && (
+        <div className="fixed inset-0 flex items-center justify-center bg-red-50 dark:bg-red-900 z-50">
+          <div className="text-center p-8 max-w-md">
+            <div className="text-6xl mb-4">🚫</div>
+            <h1 className="text-2xl font-bold text-red-600 dark:text-red-300 mb-4">
+              {prefs.language === 'ar' ? 'تم حظر حسابك' : 'Account Blocked'}
+            </h1>
+            <p className="text-red-500 dark:text-red-200 mb-6">
+              {prefs.language === 'ar' 
+                ? 'تم حظر حسابك من قبل المسؤول. يرجى التواصل مع الدعم للمساعدة.'
+                : 'Your account has been blocked by the administrator. Please contact support for assistance.'}
+            </p>
+            <button 
+              onClick={handleLogout}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
+            >
+              {prefs.language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Deleted User Screen */}
+      {auth.loggedIn && isDeleted && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-50">
+          <div className="text-center p-8 max-w-md">
+            <div className="text-6xl mb-4">🗑️</div>
+            <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300 mb-4">
+              {prefs.language === 'ar' ? 'تم حذف حسابك' : 'Account Deleted'}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              {prefs.language === 'ar' 
+                ? 'تم حذف حسابك. يمكنك إنشاء حساب جديد.'
+                : 'Your account has been deleted. You can create a new account.'}
+            </p>
+            <button 
+              onClick={handleLogout}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            >
+              {prefs.language === 'ar' ? 'إنشاء حساب جديد' : 'Create New Account'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {!auth.loggedIn ? (
         <div className="fixed inset-0 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
           <div className="w-full h-full">
