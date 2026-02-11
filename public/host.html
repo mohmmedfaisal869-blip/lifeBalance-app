@@ -65,7 +65,7 @@
       .btn-block:hover { background:#ea580c }
       .btn-unblock { background:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px }
       .btn-unblock:hover { background:#059669 }
-      .blocked-row { background:#ee0000 !important; opacity:0.7 }
+      .blocked-row { background:#fef2f2 !important; opacity:0.7 }
     </style>
   </head>
   <body>
@@ -193,6 +193,33 @@
         } catch (error) {
           console.error('Delete user error:', error);
           alert('Failed to delete user');
+        }
+      }
+
+      // Delete ALL users
+      async function deleteAllUsers() {
+        if (!confirm('⚠️ WARNING: This will DELETE ALL USERS! Are you absolutely sure?')) return;
+        if (!confirm('⚠️ FINAL WARNING: All user data will be permanently lost. Type "DELETE ALL" to confirm.')) return;
+        const confirmText = prompt('Type "DELETE ALL" to confirm:');
+        if (confirmText !== 'DELETE ALL') {
+          alert('Cancelled. You must type exactly "DELETE ALL" to proceed.');
+          return;
+        }
+        try {
+          // Delete all users (using neq to match all)
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=neq.IMPOSSIBLE_ID`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          });
+          if (!response.ok) throw new Error('Failed to delete');
+          alert('All users have been deleted!');
+          render(); // Refresh the page
+        } catch (error) {
+          console.error('Delete all users error:', error);
+          alert('Failed to delete all users');
         }
       }
 
@@ -621,7 +648,10 @@
           <!-- Users Tab -->
           <div id="tab-users" class="tab-content">
             <div class="card">
-              <h3>👥 All Users (${allUsers.length}) <span class="small">— click any row for full details</span></h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">👥 All Users (${allUsers.length}) <span class="small">— click any row for full details</span></h3>
+                <button onclick="deleteAllUsers()" style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">🗑️ Delete All Users</button>
+              </div>
               <table>
                 <thead><tr><th>Email</th><th>Name</th><th>Type</th><th>Quran</th><th>Water</th><th>Tasks</th><th>Last Active</th></tr></thead>
                 <tbody>`;
