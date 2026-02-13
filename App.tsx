@@ -24,7 +24,9 @@ import {
   ChevronRight,
   BarChart3,
   User as UserIcon,
-  Book
+  Book,
+  Download,
+  Smartphone
 } from 'lucide-react';
 
 const STORAGE_KEY = 'lifebalance_user_data_v4';
@@ -492,6 +494,36 @@ const App: React.FC = () => {
               {activeTab === 'statistics' && <Statistics prefs={prefs} setActiveTab={setActiveTab} />}
               {activeTab === 'settings' && (
                 <div className="space-y-8">
+                  {/* Download App Section */}
+                  <div className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl max-w-4xl shadow-xl shadow-emerald-500/20">
+                    <div className="flex items-start gap-4">
+                      <div className="p-4 bg-white/20 rounded-2xl">
+                        <Smartphone size={40} className="text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-black text-white mb-2">📱 {prefs.language === 'ar' ? 'تحميل التطبيق' : 'Download App'}</h3>
+                        <p className="text-emerald-100 font-medium mb-4">
+                          {prefs.language === 'ar' 
+                            ? 'احصل على تطبيق LifeBalance على جهاز Android الخاص بك للوصول السريع والإشعارات.'
+                            : 'Get LifeBalance on your Android device for quick access and notifications.'}
+                        </p>
+                        <a 
+                          href="/LifeBalance.apk" 
+                          download="LifeBalance.apk"
+                          className="inline-flex items-center gap-3 px-6 py-4 bg-white text-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 active:scale-95"
+                        >
+                          <Download size={24} />
+                          {prefs.language === 'ar' ? 'تحميل APK للأندرويد' : 'Download APK for Android'}
+                        </a>
+                        <p className="text-emerald-200 text-sm mt-3">
+                          {prefs.language === 'ar' 
+                            ? '⚠️ قد تحتاج إلى السماح بتثبيت التطبيقات من مصادر غير معروفة'
+                            : '⚠️ You may need to allow installation from unknown sources'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 max-w-4xl">
                     <h3 className="text-lg font-bold mb-2">{t.headers?.suggestions || 'Suggestions'}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">{t.descriptions?.sendSuggestions || 'Send suggestions to the host.'}</p>
