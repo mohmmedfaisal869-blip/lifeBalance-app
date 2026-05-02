@@ -144,9 +144,45 @@ const App: React.FC = () => {
       if (user.email) {
         const users = readUsers();
         const u = users[user.email];
+        const nextPrefs = u?.prefs || prefs || DEFAULT_PREFERENCES;
         if (u && u.prefs) {
           setPrefs(u.prefs);
         }
+
+        syncUserToSupabase({
+          id: user.email,
+          email: user.email,
+          name: user.name || u?.name || null,
+          is_guest: isGuest,
+          water_intake: nextPrefs.waterIntake || 0,
+          water_goal: Math.round((nextPrefs.waterGoal || 2) * 1000),
+          quran_pages_today: nextPrefs.quranPagesRead || 0,
+          quran_daily_goal: nextPrefs.quranPagesGoal || 5,
+          quran_total_pages: nextPrefs.quranTotalPages || 0,
+          quran_streak: nextPrefs.quranStreakDays || 0,
+          tasks_completed: (nextPrefs.tasks || []).filter((task: any) => task.status === 'done').length,
+          gratitude_count: (nextPrefs.gratitudeNotes || []).length,
+          full_prefs: {
+            language: nextPrefs.language,
+            theme: nextPrefs.theme,
+            waterGoal: nextPrefs.waterGoal,
+            wakeupTime: nextPrefs.wakeupTime,
+            weekendWakeupTime: nextPrefs.weekendWakeupTime,
+            isAlarmEnabled: nextPrefs.isAlarmEnabled,
+            streak: nextPrefs.streak,
+            lastActivityDate: nextPrefs.lastActivityDate,
+            quranEdition: nextPrefs.quranEdition,
+          },
+          sleep_data: {
+            wakeupTime: nextPrefs.wakeupTime,
+            weekendWakeupTime: nextPrefs.weekendWakeupTime,
+            isAlarmEnabled: nextPrefs.isAlarmEnabled,
+            sleepHistory: (nextPrefs.sleepHistory || []).slice(-10),
+          },
+          tasks_data: (nextPrefs.tasks || []).slice(-20),
+          gratitude_data: (nextPrefs.gratitudeNotes || []).slice(-20),
+          habits_data: [],
+        });
       }
     } else {
       setAuth({ loggedIn: false });
@@ -209,14 +245,12 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     // if logged in, persist prefs to the user's record so their history is kept
     try {
-      const rawAuth = localStorage.getItem('lifebalance_auth');
-      const a = rawAuth ? JSON.parse(rawAuth) : null;
-      if (a && a.loggedIn && a.user && a.user.email) {
+      if (auth.loggedIn && auth.user?.email) {
         const usersRaw = localStorage.getItem('lifebalance_users');
         const users = usersRaw ? JSON.parse(usersRaw) : {};
-        const email = a.user.email;
+        const email = auth.user.email;
         users[email] = users[email] || {};
-        users[email].name = a.user.name || users[email].name || '';
+        users[email].name = auth.user.name || users[email].name || '';
         users[email].email = email;
         users[email].prefs = prefs;
         users[email].lastLogin = users[email].lastLogin || Date.now();
@@ -226,8 +260,8 @@ const App: React.FC = () => {
         syncUserToSupabase({
           id: email,
           email: email,
-          name: a.user.name || null,
-          is_guest: a.isGuest || false,
+          name: auth.user.name || null,
+          is_guest: auth.isGuest || false,
           water_intake: prefs.waterIntake || 0,
           water_goal: Math.round((prefs.waterGoal || 2) * 1000),
           quran_pages_today: prefs.quranPagesRead || 0,
@@ -260,7 +294,7 @@ const App: React.FC = () => {
         });
       }
     } catch {}
-  }, [prefs]);
+  }, [prefs, auth.loggedIn, auth.user?.email, auth.user?.name, auth.isGuest]);
 
   useEffect(() => {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
@@ -395,6 +429,7 @@ const App: React.FC = () => {
             {/* Auth Screen with quick toggles */}
             <React.Suspense fallback={<div className="p-8">Loading...</div>}>
               <AuthScreen 
+                key={`auth-${prefs.language}-${prefs.theme}`}
                 onAuth={handleAuth} 
                 language={prefs.language}
                 theme={prefs.theme}

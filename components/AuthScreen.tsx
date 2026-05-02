@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail, User, ArrowRight, Sparkles, Shield, Globe, Sun, Moon } from 'lucide-react';
+import { translations } from '../i18n';
 
 interface AuthScreenProps {
   onAuth: (user: { name: string; email?: string } | null, isGuest?: boolean) => void;
@@ -24,11 +25,11 @@ function writeUsers(obj: Record<string, any>) {
   } catch {}
 }
 
-function defaultPrefs() {
+function defaultPrefs(lang: 'en' | 'ar', theme: 'light' | 'dark') {
   const now = new Date().toDateString();
   return {
-    language: 'en',
-    theme: 'light',
+    language: lang,
+    theme,
     waterGoal: 2.0,
     waterIntake: 0,
     lastWaterReset: now,
@@ -40,7 +41,13 @@ function defaultPrefs() {
     archivedTasks: [],
     gratitudeNotes: [],
     streak: 0,
-    lastActivityDate: ''
+    lastActivityDate: '',
+    quranPagesGoal: 5,
+    quranPagesRead: 0,
+    lastQuranReset: now,
+    quranEdition: 'kingFahd',
+    quranTotalPages: 0,
+    quranStreakDays: 0
   };
 }
 
@@ -67,104 +74,146 @@ const Logo = () => (
 );
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onToggleLanguage, onToggleTheme }) => {
+  const t = translations[language];
+  const ta = t.auth;
   const [mode, setMode] = useState<'login' | 'signup' | 'guest'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const errorTimeoutRef = React.useRef<number | null>(null);
 
   const showError = (msg: string) => {
+    setIsLoading(false);
     setError(msg);
-    setTimeout(() => setError(null), 5000);
+    if (errorTimeoutRef.current) {
+      window.clearTimeout(errorTimeoutRef.current);
+    }
+    errorTimeoutRef.current = window.setTimeout(() => {
+      setError(null);
+      errorTimeoutRef.current = null;
+    }, 5000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        window.clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Safety net: never keep auth button stuck in loading state.
+  useEffect(() => {
+    if (!isLoading) return;
+    const timeout = window.setTimeout(() => {
+      setIsLoading(false);
+      showError(
+        language === 'ar'
+          ? 'استغرق الطلب وقتًا أطول من المتوقع. حاول مرة أخرى.'
+          : 'Request is taking longer than expected. Please try again.'
+      );
+    }, 8000);
+
+    return () => window.clearTimeout(timeout);
+  }, [isLoading, language]);
 
   const handleSignup = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
-    if (!name.trim()) {
-      showError('Please enter your name');
+
+    try {
+      if (!name.trim()) {
+        showError(ta.errors.name);
+        return;
+      }
+      if (!email.trim()) {
+        showError(ta.errors.email);
+        return;
+      }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        showError(ta.errors.emailInvalid);
+        return;
+      }
+      if (phone.trim() && !/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) {
+        showError(ta.errors.phoneInvalid);
+        return;
+      }
+      
+      const users = readUsers();
+      if (users[email.toLowerCase()]) {
+        showError(ta.errors.accountExists);
+        return;
+      }
+      
+      const user = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim() || undefined,
+        prefs: defaultPrefs(language, theme),
+        createdAt: Date.now(),
+        lastLogin: Date.now(),
+        isGuest: false
+      };
+      users[email.toLowerCase()] = user;
+      writeUsers(users);
+      onAuth({ name: user.name, email: user.email }, false);
+    } catch {
+      showError(language === 'ar' ? 'حدث خطأ غير متوقع. حاول مرة أخرى.' : 'Unexpected error. Please try again.');
+    } finally {
       setIsLoading(false);
-      return;
     }
-    if (!email.trim()) {
-      showError('Please enter your email');
-      setIsLoading(false);
-      return;
-    }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      showError('Please enter a valid email address');
-      setIsLoading(false);
-      return;
-    }
-    if (phone.trim() && !/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) {
-      showError('Please enter a valid mobile number');
-      setIsLoading(false);
-      return;
-    }
-    
-    const users = readUsers();
-    if (users[email.toLowerCase()]) {
-      showError('An account with this email already exists. Please login.');
-      setIsLoading(false);
-      return;
-    }
-    
-    const user = {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim() || undefined,
-      prefs: defaultPrefs(),
-      createdAt: Date.now(),
-      lastLogin: Date.now(),
-      isGuest: false
-    };
-    users[email.toLowerCase()] = user;
-    writeUsers(users);
-    onAuth({ name: user.name, email: user.email }, false);
   };
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
-    const identifier = email.trim();
-    if (!identifier) {
-      showError('Please enter your email or mobile number');
-      setIsLoading(false);
-      return;
-    }
-    
-    const users = readUsers();
-    let user: any = null;
-    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-    const phoneRegex = /^\+?[0-9\s()-]{7,20}$/;
 
-    if (emailRegex.test(identifier)) {
-      user = users[identifier.toLowerCase()];
-    } else if (phoneRegex.test(identifier)) {
-      const digits = (s: string) => s.replace(/\D/g, '');
-      const wanted = digits(identifier);
-      user = Object.values(users).find((u: any) => u && u.phone && digits(String(u.phone)) === wanted);
-    } else {
-      showError('Please enter a valid email or mobile number');
-      setIsLoading(false);
-      return;
-    }
+    try {
+      const identifier = email.trim();
+      if (!identifier) {
+        showError(ta.errors.idRequired);
+        return;
+      }
+      
+      const users = readUsers();
+      let user: any = null;
+      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      const phoneRegex = /^\+?[0-9\s()-]{7,20}$/;
 
-    if (!user) {
-      showError('No account found. Please sign up first.');
+      if (emailRegex.test(identifier)) {
+        user = users[identifier.toLowerCase()];
+      } else if (phoneRegex.test(identifier)) {
+        const digits = (s: string) => s.replace(/\D/g, '');
+        const wanted = digits(identifier);
+        user = Object.values(users).find((u: any) => u && u.phone && digits(String(u.phone)) === wanted);
+      } else {
+        showError(ta.errors.idInvalid);
+        return;
+      }
+
+      if (!user) {
+        showError(ta.errors.notFound);
+        return;
+      }
+
+      if (!user.email || typeof user.email !== 'string') {
+        showError(language === 'ar' ? 'بيانات الحساب غير مكتملة. أنشئ حسابًا جديدًا.' : 'Account data is incomplete. Please create a new account.');
+        return;
+      }
+      
+      user.lastLogin = Date.now();
+      users[user.email.toLowerCase()] = user;
+      writeUsers(users);
+      onAuth({ name: user.name, email: user.email.toLowerCase() }, false);
+    } catch {
+      showError(language === 'ar' ? 'حدث خطأ غير متوقع. حاول مرة أخرى.' : 'Unexpected error. Please try again.');
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    user.lastLogin = Date.now();
-    users[user.email.toLowerCase()] = user;
-    writeUsers(users);
-    onAuth({ name: user.name, email: user.email.toLowerCase() }, false);
   };
 
   const handleGuest = () => {
@@ -172,35 +221,40 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
     const guestEmail = `${id}@guest.local`;
     const users = readUsers();
     const user = {
-      name: 'Guest',
+      name: ta.guestName,
       email: guestEmail,
-      prefs: defaultPrefs(),
+      prefs: defaultPrefs(language, theme),
       createdAt: Date.now(),
       lastLogin: Date.now(),
       isGuest: true
     };
     users[guestEmail] = user;
     writeUsers(users);
-    onAuth({ name: 'Guest', email: guestEmail }, true);
+    onAuth({ name: ta.guestName, email: guestEmail }, true);
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 overflow-y-auto">
+    <div
+      dir={language === 'ar' ? 'rtl' : 'ltr'}
+      className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 overflow-y-auto"
+    >
       <div className="w-full max-w-md my-8 relative">
-        {/* Top-right quick toggles */}
-        <div className="absolute -top-2 right-0 flex items-center gap-2">
+        {/* Top quick toggles (inline end = right in LTR, left in RTL) */}
+        <div className="absolute -top-2 end-0 flex items-center gap-2">
           <button
             onClick={onToggleLanguage}
             className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black shadow-sm hover:shadow transition"
-            aria-label="Toggle language"
+            aria-label={ta.ariaToggleLang}
+            type="button"
           >
             {language === 'ar' ? 'عربي' : 'EN'} / {language === 'ar' ? 'EN' : 'عربي'}
           </button>
           <button
             onClick={onToggleTheme}
             className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:shadow transition"
-            aria-label="Toggle theme"
-            title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+            aria-label={theme === 'dark' ? ta.titleSwitchLight : ta.titleSwitchDark}
+            title={theme === 'dark' ? ta.titleSwitchLight : ta.titleSwitchDark}
+            type="button"
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -213,10 +267,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
             </div>
           </div>
           <h1 className="text-5xl font-black text-slate-900 dark:text-white mb-2 tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            LifeBalance
+            {t.title}
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 font-bold">
-            Welcome to your wellness journey
+            {ta.brandSubtitle}
           </p>
         </div>
 
@@ -225,6 +279,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
           {/* Mode Tabs */}
           <div className="flex gap-2 mb-8 p-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
             <button 
+              type="button"
               onClick={() => { setMode('login'); setError(null); setName(''); }}
               className={`flex-1 py-3 rounded-xl font-black text-sm transition-all duration-200 ${
                 mode === 'login' 
@@ -232,9 +287,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
-              Sign In
+              {ta.signIn}
             </button>
             <button 
+              type="button"
               onClick={() => { setMode('signup'); setError(null); setName(''); setEmail(''); }}
               className={`flex-1 py-3 rounded-xl font-black text-sm transition-all duration-200 ${
                 mode === 'signup' 
@@ -242,7 +298,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
-              Sign Up
+              {ta.signUp}
             </button>
           </div>
 
@@ -261,19 +317,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                   <Sparkles size={40} className="text-white" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                  Continue as Guest
+                  {ta.guestTitle}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 font-bold leading-relaxed max-w-sm mx-auto">
-                  Explore LifeBalance without creating an account. Your data will be saved locally on this device.
+                  {ta.guestBody}
                 </p>
               </div>
               <button 
+                type="button"
                 onClick={handleGuest} 
                 className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Sparkles size={20} />
-                Continue as Guest
-                <ArrowRight size={20} />
+                {ta.continueGuest}
+                <ArrowRight size={20} className={language === 'ar' ? 'rotate-180' : ''} />
               </button>
             </div>
           ) : (
@@ -281,18 +338,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
               {mode === 'signup' && (
                 <div>
                   <label className="block text-sm font-black text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                    Full Name
+                    {ta.fullName}
                   </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
+                    <div className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
                       <User size={22} />
                     </div>
                     <input 
                       type="text"
                       value={name} 
                       onChange={e => setName(e.target.value)} 
-                      className="w-full pl-14 pr-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
-                      placeholder="Enter your name"
+                      className="w-full ps-14 pe-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
+                      placeholder={ta.phName}
                       autoComplete="name"
                     />
                   </div>
@@ -302,18 +359,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
               {mode === 'signup' && (
                 <div>
                   <label className="block text-sm font-black text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                    Mobile Number
+                    {ta.mobileNumber}
                   </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
+                    <div className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
                       <Globe size={22} />
                     </div>
                     <input
                       type="tel"
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
-                      className="w-full pl-14 pr-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
-                      placeholder="e.g. +1 555 123 4567"
+                      className="w-full ps-14 pe-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
+                      placeholder={ta.phPhone}
                       autoComplete="tel"
                     />
                   </div>
@@ -322,18 +379,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
               
               <div>
                 <label className="block text-sm font-black text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                  {mode === 'login' ? 'Email or Mobile Number' : 'Email Address'}
+                  {mode === 'login' ? ta.emailOrMobile : ta.emailAddress}
                 </label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
+                  <div className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
                     <Mail size={22} />
                   </div>
                   <input 
                     type={mode === 'login' ? 'text' : 'email'}
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className="w-full pl-14 pr-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
-                    placeholder={mode === 'login' ? 'your.email@example.com or +1 555 123 4567' : 'your.email@example.com'}
+                    className="w-full ps-14 pe-4 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-bold text-lg"
+                    placeholder={mode === 'login' ? ta.phLoginId : ta.phEmail}
                     autoComplete={mode === 'login' ? 'username' : 'email'}
                   />
                 </div>
@@ -347,12 +404,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                 {isLoading ? (
                   <>
                     <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Processing...</span>
+                    <span>{ta.processing}</span>
                   </>
                 ) : (
                   <>
-                    <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
-                    <ArrowRight size={22} />
+                    <span>{mode === 'login' ? ta.signIn : ta.createAccount}</span>
+                    <ArrowRight size={22} className={language === 'ar' ? 'rotate-180' : ''} />
                   </>
                 )}
               </button>
@@ -363,7 +420,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-4 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest">
-                    OR
+                    {ta.or}
                   </span>
                 </div>
               </div>
@@ -374,7 +431,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
                 className="w-full py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-black hover:bg-slate-200 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-3 border-2 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"
               >
                 <Shield size={20} />
-                Continue as Guest
+                {ta.continueGuest}
               </button>
             </form>
           )}
@@ -383,7 +440,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <Shield size={14} />
-              <span className="font-bold">Your data is stored securely locally</span>
+              <span className="font-bold">{ta.securityNote}</span>
             </div>
           </div>
         </div>
@@ -391,7 +448,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuth, language, theme, onTogg
         {/* Footer */}
         <div className="text-center mt-6 animate-in fade-in">
           <p className="text-xs text-slate-400 dark:text-slate-500 font-bold">
-            © {new Date().getFullYear()} LifeBalance. All rights reserved.
+            © {new Date().getFullYear()} {t.title}. {language === 'ar' ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}
           </p>
         </div>
       </div>

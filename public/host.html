@@ -96,6 +96,74 @@
       
       // Store users globally for modal access
       let allUsers = [];
+      let activeDataSource = 'cloud';
+
+      function readLocalUsers() {
+        try {
+          const raw = localStorage.getItem('lifebalance_users');
+          return raw ? JSON.parse(raw) : {};
+        } catch (error) {
+          console.error('Local users read error:', error);
+          return {};
+        }
+      }
+
+      function readLocalSuggestions() {
+        try {
+          const raw = localStorage.getItem('lifebalance_suggestions');
+          return raw ? JSON.parse(raw) : [];
+        } catch (error) {
+          console.error('Local suggestions read error:', error);
+          return [];
+        }
+      }
+
+      function normalizeLocalUser(entryKey, user) {
+        const prefs = user && user.prefs ? user.prefs : {};
+        return {
+          id: user.email || entryKey,
+          email: user.email || entryKey,
+          name: user.name || null,
+          is_guest: Boolean(user.isGuest),
+          water_intake: prefs.waterIntake || 0,
+          water_goal: Math.round((prefs.waterGoal || 2) * 1000),
+          quran_pages_today: prefs.quranPagesRead || 0,
+          quran_daily_goal: prefs.quranPagesGoal || 5,
+          quran_total_pages: prefs.quranTotalPages || 0,
+          quran_streak: prefs.quranStreakDays || 0,
+          tasks_completed: (prefs.tasks || []).filter(task => task.status === 'done').length,
+          gratitude_count: (prefs.gratitudeNotes || []).length,
+          full_prefs: prefs,
+          sleep_data: {
+            wakeupTime: prefs.wakeupTime,
+            weekendWakeupTime: prefs.weekendWakeupTime,
+            isAlarmEnabled: prefs.isAlarmEnabled,
+            sleepHistory: prefs.sleepHistory || [],
+          },
+          tasks_data: prefs.tasks || [],
+          gratitude_data: prefs.gratitudeNotes || [],
+          created_at: user.createdAt ? new Date(user.createdAt).toISOString() : null,
+          updated_at: user.lastLogin ? new Date(user.lastLogin).toISOString() : null,
+          is_blocked: Boolean(user.is_blocked),
+        };
+      }
+
+      function getLocalUsersAsArray() {
+        const users = readLocalUsers();
+        return Object.keys(users)
+          .map(key => normalizeLocalUser(key, users[key]))
+          .sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+      }
+
+      function getLocalSuggestionsAsArray() {
+        return readLocalSuggestions().map(entry => ({
+          id: entry.id,
+          text: entry.text || '',
+          created_at: entry.ts ? new Date(entry.ts).toISOString() : null,
+          user_name: entry.user?.name || null,
+          user_email: entry.user?.email || null,
+        }));
+      }
 
       // Fetch users from Supabase
       async function fetchUsersFromSupabase() {
@@ -472,6 +540,24 @@
         }
       }
 
+      function renderSourceBanner(usersCount, suggestionsCount) {
+        const sourceText = activeDataSource === 'cloud'
+          ? 'Cloud data from Supabase'
+          : activeDataSource === 'local'
+            ? 'Local browser fallback data'
+            : 'No user data found';
+        const badgeColor = activeDataSource === 'cloud' ? '#10b981' : activeDataSource === 'local' ? '#f59e0b' : '#64748b';
+        return `<div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div>
+              <h3 style="margin:0">Data Status</h3>
+              <p class="small" style="margin:8px 0 0 0">${sourceText}. Users: ${usersCount}. Suggestions: ${suggestionsCount}.</p>
+            </div>
+            <span style="background:${badgeColor};color:white;padding:8px 14px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase">${activeDataSource}</span>
+          </div>
+        </div>`;
+      }
+
       async function render() {
         if(!isLoggedIn()){ showAuth(); document.getElementById('content').innerHTML = '<p class="small" style="margin-top:20px">Please login to view host data.</p>'; return; }
         
@@ -484,11 +570,34 @@
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('refreshBtn').onclick = render;
 
-        document.getElementById('content').innerHTML = '<div class="loading">⏳ Loading from Supabase...</div>';
-        
-        // Fetch from Supabase
-        allUsers = await fetchUsersFromSupabase();
-        const suggestions = await fetchSuggestionsFromSupabase();
+        document.getElementById('content').innerHTML = '<div class="loading">⏳ Loading host data...</div>';
+
+        let suggestions = [];
+        try {
+          const [cloudUsers, cloudSuggestions] = await Promise.all([
+            fetchUsersFromSupabase(),
+            fetchSuggestionsFromSupabase(),
+          ]);
+
+          if (cloudUsers.length > 0 || cloudSuggestions.length > 0) {
+            activeDataSource = 'cloud';
+            allUsers = cloudUsers;
+            suggestions = cloudSuggestions;
+          } else {
+            const localUsers = getLocalUsersAsArray();
+            const localSuggestions = getLocalSuggestionsAsArray();
+            activeDataSource = localUsers.length > 0 || localSuggestions.length > 0 ? 'local' : 'empty';
+            allUsers = localUsers;
+            suggestions = localSuggestions;
+          }
+        } catch (error) {
+          console.error('Host render error:', error);
+          const localUsers = getLocalUsersAsArray();
+          const localSuggestions = getLocalSuggestionsAsArray();
+          activeDataSource = localUsers.length > 0 || localSuggestions.length > 0 ? 'local' : 'empty';
+          allUsers = localUsers;
+          suggestions = localSuggestions;
+        }
 
         // Calculate totals
         let totalQuranPages = 0;
@@ -504,16 +613,22 @@
         });
 
         let html = `
+          ${renderSourceBanner(allUsers.length, suggestions.length)}
           <div class="tab-buttons">
-            <button class="tab-btn active" onclick="showTab('overview')">📊 Overview</button>
-            <button class="tab-btn" onclick="showTab('quran')">📖 Quran</button>
-            <button class="tab-btn" onclick="showTab('water')">💧 Water</button>
-            <button class="tab-btn" onclick="showTab('users')">👥 Users</button>
-            <button class="tab-btn" onclick="showTab('suggestions')">💬 Suggestions</button>
+            <button class="tab-btn active" onclick="showTab('overview', this)">📊 Overview</button>
+            <button class="tab-btn" onclick="showTab('quran', this)">📖 Quran</button>
+            <button class="tab-btn" onclick="showTab('water', this)">💧 Water</button>
+            <button class="tab-btn" onclick="showTab('users', this)">👥 Users</button>
+            <button class="tab-btn" onclick="showTab('suggestions', this)">💬 Suggestions</button>
           </div>
 
           <!-- Overview Tab -->
           <div id="tab-overview" class="tab-content active">
+            ${allUsers.length === 0 ? `<div class="card" style="border:2px dashed #38bdf8;background:#f0f9ff;margin-bottom:16px">
+              <h3 style="margin-top:0;color:#0369a1">👋 No users found yet</h3>
+              <p class="small" style="color:#0c4a6e;line-height:1.6">When someone <strong>signs in on the main LifeBalance app</strong>, their account should appear here automatically. If you just logged in, click <strong>Refresh</strong> above.</p>
+              <p class="small" style="color:#64748b;margin-bottom:0">If rows still do not appear, the app may not have synced to Supabase yet or browser-only data may exist on a different device.</p>
+            </div>` : ''}
             <div class="card">
               <h3>📊 Overall Statistics</h3>
               <div class="stat-grid">
@@ -698,11 +813,13 @@
         document.getElementById('content').innerHTML = html;
       }
 
-      function showTab(name) {
+      function showTab(name, button) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
-        event.target.classList.add('active');
+        if (button) {
+          button.classList.add('active');
+        }
       }
 
       render();

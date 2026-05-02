@@ -220,7 +220,7 @@ export const translations = {
       failedSubmit: 'Failed to submit suggestion.',
       confirmLogout: 'Are you sure you want to logout?'
     },
-    auth: {
+    authLegacy: {
       welcome: 'Welcome to LifeBalance',
       name: 'Name',
       email: 'Email',
@@ -308,7 +308,41 @@ export const translations = {
         search: 'Search',
         cancel: 'Cancel',
         listButton: 'List'
-    }
+    },
+    auth: {
+      brandSubtitle: 'Welcome to your wellness journey',
+      signIn: 'Sign In',
+      signUp: 'Sign Up',
+      fullName: 'Full Name',
+      mobileNumber: 'Mobile Number',
+      emailOrMobile: 'Email or Mobile Number',
+      emailAddress: 'Email Address',
+      phName: 'Enter your name',
+      phPhone: 'e.g. +1 555 123 4567',
+      phLoginId: 'your.email@example.com or +1 555 123 4567',
+      phEmail: 'your.email@example.com',
+      processing: 'Processing...',
+      createAccount: 'Create Account',
+      or: 'OR',
+      continueGuest: 'Continue as Guest',
+      guestTitle: 'Continue as Guest',
+      guestBody: 'Explore LifeBalance without creating an account. Your data will be saved locally on this device.',
+      securityNote: 'Your data is stored securely locally',
+      ariaToggleLang: 'Toggle language',
+      titleSwitchLight: 'Switch to Light',
+      titleSwitchDark: 'Switch to Dark',
+      guestName: 'Guest',
+      errors: {
+        name: 'Please enter your name',
+        email: 'Please enter your email',
+        emailInvalid: 'Please enter a valid email address',
+        phoneInvalid: 'Please enter a valid mobile number',
+        accountExists: 'An account with this email already exists. Please login.',
+        idRequired: 'Please enter your email or mobile number',
+        idInvalid: 'Please enter a valid email or mobile number',
+        notFound: 'No account found. Please sign up first.',
+      },
+    },
   },
   ar: {
     title: 'توازن الحياة',
@@ -532,7 +566,7 @@ export const translations = {
       failedSubmit: 'فشل تقديم الاقتراح.',
       confirmLogout: 'هل أنت متأكد أنك تريد تسجيل الخروج؟'
     },
-    auth: {
+    authLegacy: {
       welcome: 'مرحباً بك في توازن الحياة',
       name: 'الاسم',
       email: 'البريد الإلكتروني أو رقم الهاتف',
@@ -620,6 +654,40 @@ export const translations = {
         search: 'بحث',
         cancel: 'إلغاء',
         listButton: 'القائمة'
-    }
+    },
+    auth: {
+      brandSubtitle: 'مرحباً بك في رحلة العافية',
+      signIn: 'تسجيل الدخول',
+      signUp: 'إنشاء حساب',
+      fullName: 'الاسم الكامل',
+      mobileNumber: 'رقم الجوال',
+      emailOrMobile: 'البريد الإلكتروني أو رقم الجوال',
+      emailAddress: 'البريد الإلكتروني',
+      phName: 'أدخل اسمك',
+      phPhone: 'مثال: +966 5xx xxx xxxx',
+      phLoginId: 'بريدك أو رقم جوالك',
+      phEmail: 'your.email@example.com',
+      processing: 'جاري المعالجة...',
+      createAccount: 'إنشاء الحساب',
+      or: 'أو',
+      continueGuest: 'المتابعة كضيف',
+      guestTitle: 'المتابعة كضيف',
+      guestBody: 'استكشف LifeBalance دون إنشاء حساب. تُحفظ بياناتك محلياً على هذا الجهاز.',
+      securityNote: 'تُخزَّن بياناتك بأمان على جهازك',
+      ariaToggleLang: 'تبديل اللغة',
+      titleSwitchLight: 'الوضع الفاتح',
+      titleSwitchDark: 'الوضع الداكن',
+      guestName: 'ضيف',
+      errors: {
+        name: 'يرجى إدخال الاسم',
+        email: 'يرجى إدخال البريد الإلكتروني',
+        emailInvalid: 'يرجى إدخال بريد إلكتروني صالح',
+        phoneInvalid: 'يرجى إدخال رقم جوال صالح',
+        accountExists: 'هذا البريد مسجّل مسبقاً. يرجى تسجيل الدخول.',
+        idRequired: 'يرجى إدخال البريد أو رقم الجوال',
+        idInvalid: 'يرجى إدخال بريد أو رقم جوال صالح',
+        notFound: 'لا يوجد حساب. يرجى التسجيل أولاً.',
+      },
+    },
   }
 };
